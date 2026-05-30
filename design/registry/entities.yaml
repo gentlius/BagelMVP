@@ -37,7 +37,7 @@
 #   Each entry: name, status, source, referenced_by[], attributes{}, added, revised
 
 version: 1
-last_updated: ""
+last_updated: "2026-05-30"
 
 # ─── ENTITIES ────────────────────────────────────────────────────────────────
 # Named game-world objects: enemies, NPCs, characters, factions, bosses.
@@ -139,7 +139,37 @@ formulas: []
 #
 # Required fields: name, status, source, referenced_by, value, unit, added
 
-constants: []
+constants:
+  - name: MAX_QUEUED_TRANSITIONS
+    status: active
+    source: design/gdd/game-state-manager.md
+    referenced_by:
+      - design/gdd/game-state-manager.md
+    value: 1
+    unit: transitions
+    added: 2026-05-30
+    revised: ""
+
+  - name: RETRY_DEAD_STATE_MINIMUM_MS
+    status: active
+    source: design/gdd/game-state-manager.md
+    referenced_by:
+      - design/gdd/game-state-manager.md
+    value: 0
+    unit: ms
+    added: 2026-05-30
+    revised: ""
+    # P4 explicit stake. Post-MVP에서 광고 SDK 도입 시 단일 변경 지점.
+
+  - name: BOOT_INIT_TIMEOUT_GUARD_MS
+    status: active
+    source: design/gdd/game-state-manager.md
+    referenced_by:
+      - design/gdd/game-state-manager.md
+    value: 30000
+    unit: ms
+    added: 2026-05-30
+    revised: ""
 
 # Example:
 #
