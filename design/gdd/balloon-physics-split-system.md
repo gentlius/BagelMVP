@@ -35,7 +35,7 @@ R4 risk (다중 풍선 + 충돌 + 분열 = 가장 무거운 시뮬레이션) 대
 |--------|-----------|--------|-----------|---------|
 | `character` | `balloonContainer` (zIndex 5) | **(0.5, 1.0) bottom-center** → `character.y` = **발 위치** | 1 (영구) | `x`, `y` (=발), `width`, `height` (참고용); 충돌은 `CHARACTER_HITBOX_RADIUS` 사용 |
 | `harpoon` | `harpoonContainer` | (0.5, 0.5) center | **1** (정책) | `x`, `y` (center), `vy` = `-HARPOON_SPEED` |
-| `balloon` | `balloonContainer` (zIndex 0–4) | (0.5, 0.5) center | **`BALLOON_MAX_ACTIVE` (30)** | **Sprite** entity. `x`, `y` (center), `vx`, `vy`, `size`∈{Large, Medium, Small}, `color`, `isCritical`, `sprite.tint` (color 반영), `sprite.filters` (공유 GlowFilter 1개 참조) |
+| `balloon` | `balloonContainer` (zIndex 0–4) | (0.5, 0.5) center | **`BALLOON_MAX_ACTIVE` (30)** | **Sprite** entity. `id` (unique, spawn 시 monotonic 증가), `x`, `y` (center), `vx`, `vy`, `size`∈{Large, Medium, Small}, `color`, `isCritical`, `sprite.tint` (color 반영), `sprite.filters` (공유 GlowFilter 1개 참조) |
 
 **필수 설정**:
 - `balloonContainer.sortableChildren = true` (character zIndex 5 작동 필수 — Pixi v8 default = false)
@@ -94,7 +94,7 @@ y  += vy * dt
 - 컬러: parent 컬러 상속
 - **자식의 `isCritical = false` 강제** (M-1 결정) — 분열 자식은 항상 일반 풍선. Critical 판정 권한은 Critical Pop System 독점
 
-명중 시 emit: `balloon:popped({ size: parent.size, x: parent.x, y: parent.y, color: parent.color, isCritical: parent.isCritical })` — parent entity 상태 그대로 reflect.
+명중 시 emit: `balloon:popped({ id: parent.id, size: parent.size, x: parent.x, y: parent.y, color: parent.color, isCritical: parent.isCritical })` — parent entity 상태 그대로 reflect. **`id` 필드는 Score & Combo의 frame-guard ID 기반 식별에 사용 (score-combo §3.2 M-SC-1 lock)**.
 
 ### 3.5 Harpoon Entity
 
@@ -220,7 +220,8 @@ SPAWN_COUNT_AT(t):
 - `art-bible §6.3` — Z-layer (character는 balloonContainer 내)
 
 **Downstream** (emit):
-- `balloon:popped({ size, x, y, color, isCritical })` → Score & Combo, Critical Pop, Visual Juice
+- `balloon:popped({ id, size, x, y, color, isCritical })` → Score & Combo, Critical Pop, Visual Juice
+  - `id`: balloon entity unique 식별자 (spawn 시 monotonic 증가). Score & Combo frame-guard에서 chained 판별용 (M-SC-1 lock — score-combo §3.2)
   - `isCritical`은 명중 시점 balloon entity 상태 그대로 reflect (parent.isCritical)
 - `balloon:split({ parent, children: [left, right] })` → Visual Juice (분열 시각 효과 + squash/stretch + floating)
 - `game:over` → GameLoop.end() 직접 호출 (prototype). M1 retrofit: `game-state-manager`가 listen → state machine transition

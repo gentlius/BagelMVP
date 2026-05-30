@@ -104,6 +104,7 @@ chainCandidates.forEach(chained => balloonSystem.removeBalloon(chained.id))
 emit `criticalPop:fired`, {
   x: event.x,
   y: event.y,
+  criticalSize: event.size,         // 명중 시점 Critical 본체 size (M-CP-1 lock — score-combo §3.3)
   chainedBalloons: chainCandidates.map(b => ({ id: b.id, x: b.x, y: b.y, size: b.size, color: b.color }))
 }
 ```
@@ -203,7 +204,8 @@ Critical pop at (300, 400), CHAIN_RADIUS=150px → 인근 (200, 500), (400, 350)
 - `art-bible §4.2` — Critical Gold glow 매핑 (HERO tier: distance 28px, alpha 0.85, outline 2px)
 
 **Downstream** (emit / modify):
-- `criticalPop:fired({ x, y, chainedBalloons: [{id, x, y, size, color}, ...] })` → Visual Juice (다크닝 trigger) + Score & Combo (콤보 카운트)
+- `criticalPop:fired({ x, y, criticalSize, chainedBalloons: [{id, x, y, size, color}, ...] })` → Visual Juice (다크닝 trigger) + Score & Combo (콤보 카운트)
+  - `criticalSize`: Critical 본체의 명중 시점 size (Large/Medium/Small). Score & Combo가 본체 점수 계산에 사용 (M-CP-1 lock — score-combo §3.3)
   - `chainedBalloons`는 **항상 배열**, chain 없으면 `[]` (수신자 null guard 불필요)
   - **timing 정보 미포함** — Visual Juice 자체 상수 (`VJ_DARKEN_DURATION = 0.1s`) 사용 (§3.4)
 - balloon entity 직접 modify (`balloon.isCritical = true` + `sprite.tint` + `sprite.filters` 교체) — prototype 단순화, balloon-physics-split §3.1 + §6 lock된 인터페이스 계약 따름
