@@ -101,7 +101,7 @@ POP! 프로젝트는 2026-05-29 ~ 30 사이 다음 산출물을 작성했다 (su
 | 7 | PROCEED/PIVOT/KILL 기준: 5 Build Gates + 6 Player Gates | QA Lead | 30줄 |
 | 8 | Performance budget hard floor (60fps iPhone 11, <30 draw calls, <600KB) | Tech Dir, Release Mgr | 5줄 |
 | 9 | Bundle analyzer 첫 빌드부터 실행 (`vite-bundle-visualizer`) | Release Mgr | 2줄 |
-| 10 | Audio implementation note (sfxr 7 SFX + CC0 BGM 1트랙 + Web Audio API 직접) | Audio Dir | 15줄 |
+| 10 | Audio implementation note (sfxr 7 SFX + CC0 BGM 1트랙 + Web Audio API 직접) **[SUPERSEDED 2026-05-31 by audio-director M0 Direction v2 — visual-juice §Audio Note: PowerShell 자체 합성 SFX 7개 (combo 4단계 → 2단계 재배치, M0 2슬롯 M1 Power-up 전환) + freesound.org CC0 BGM 3트랙 다운로드 (Primary/Backup A/B, lazy import 분리) + Web Audio API 직접 + AudioContext unlock 패턴]** | Audio Dir | 15줄 |
 | 11 | 실기 검증 (iPhone 11 Safari 15 또는 Galaxy A52 Chrome 60fps) | Release Mgr | 2줄 |
 | 12 | ui-strings.js 단일 파일 집중 강제 | Localization Lead | 3줄 |
 | 13 | Layered Translucency 4-layer 규칙 ("frosted sky → balloon glass body → neon rim → bloom") | Creative Dir | 1줄 |
