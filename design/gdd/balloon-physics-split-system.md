@@ -224,6 +224,7 @@ SPAWN_COUNT_AT(t):
   - `id`: balloon entity unique 식별자 (spawn 시 monotonic 증가). Score & Combo frame-guard에서 chained 판별용 (M-SC-1 lock — score-combo §3.2)
   - `isCritical`은 명중 시점 balloon entity 상태 그대로 reflect (parent.isCritical)
 - `balloon:split({ parent, children: [left, right] })` → Visual Juice (분열 시각 효과 + squash/stretch + floating)
+  - `children` 배열 구조: `children[0] = left (vx = -SPLIT_VEL_X)`, `children[1] = right (vx = +SPLIT_VEL_X)` (Phase C 일관성 보강)
 - `game:over` → GameLoop.end() 직접 호출 (prototype). M1 retrofit: `game-state-manager`가 listen → state machine transition
 
 > **인터페이스 계약 (M-2 — 권한 경계)**: 본 시스템은 `balloon:popped` 단순 팝 사실만 emit (`isCritical`은 entity 상태 그대로). **Critical 판정·부여·연쇄팝 권한**은 Critical Pop System 독점 (`criticalPop:fired({ x, y, chainedBalloons[] })` 별도 emit). **콤보 카운트 권한** ("Critical +1, 연쇄 각 +1 cap +3", decisions §3 #6)은 Score & Combo 독점. 본 시스템은 entity 시뮬레이션만 책임.
