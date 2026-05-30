@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>POP! — Visual Sample 01 (Neon Glassblowing on Frosted Sky)</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #1a1a2e;
+    color: #fff;
+    padding: 20px;
+    min-height: 100vh;
+  }
+
+  h1, h2, h3 {
+    font-weight: 300;
+    margin-bottom: 12px;
+    color: #fff;
+  }
+  h1 { font-size: 24px; }
+  h2 { font-size: 18px; margin-top: 32px; color: #b5d8e8; }
+  h3 { font-size: 14px; color: #c4b0e0; }
+
+  .meta { color: #888; font-size: 12px; margin-bottom: 24px; }
+
+  /* ─── MAIN GAMEPLAY MOCK (mobile portrait 9:16) ─── */
+  .container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 32px;
+    justify-content: center;
+  }
+
+  .mock-frame {
+    width: 360px;
+    height: 640px;
+    position: relative;
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5);
+  }
+
+  /* Frosted Sky background — Pastel Sunset Gradient */
+  .sky-bg {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      180deg,
+      #B5D8E8 0%,    /* 상단: 스카이 블루 */
+      #F5C2D4 50%,   /* 중간: 소프트 핑크 */
+      #C4B0E0 100%   /* 하단: 라벤더 */
+    );
+  }
+
+  /* 풍선 (Neon Glass) — 공통 */
+  .balloon {
+    position: absolute;
+    border-radius: 50%;
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    animation: float 6s ease-in-out infinite;
+  }
+  .balloon::before {
+    content: '';
+    position: absolute;
+    top: 18%;
+    left: 22%;
+    width: 30%;
+    height: 30%;
+    background: rgba(255, 255, 255, 0.45);
+    border-radius: 50%;
+    filter: blur(4px);
+  }
+  .balloon::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 1.5px solid rgba(255, 255, 255, 0.35);
+    box-shadow: inset 0 0 24px rgba(255, 255, 255, 0.2);
+  }
+
+  /* 풍선 색상 변형 — 6색 네온 팔레트 */
+  .b-magenta {
+    background: radial-gradient(circle at 35% 30%, #FF7AC2 0%, #FF3DA5 60%, #C82885 100%);
+    box-shadow: 0 0 32px rgba(255, 61, 165, 0.6), 0 0 12px rgba(255, 122, 194, 0.8);
+  }
+  .b-cyan {
+    background: radial-gradient(circle at 35% 30%, #7AE9FF 0%, #3DD9FF 60%, #28A8C8 100%);
+    box-shadow: 0 0 32px rgba(61, 217, 255, 0.6), 0 0 12px rgba(122, 233, 255, 0.8);
+  }
+  .b-lime {
+    background: radial-gradient(circle at 35% 30%, #D9FF7A 0%, #B5FF3D 60%, #82C828 100%);
+    box-shadow: 0 0 32px rgba(181, 255, 61, 0.6), 0 0 12px rgba(217, 255, 122, 0.8);
+  }
+  .b-amber {
+    background: radial-gradient(circle at 35% 30%, #FFD97A 0%, #FFB73D 60%, #C88828 100%);
+    box-shadow: 0 0 32px rgba(255, 183, 61, 0.6), 0 0 12px rgba(255, 217, 122, 0.8);
+  }
+  .b-mint {
+    background: radial-gradient(circle at 35% 30%, #7AFFD9 0%, #3DFFC2 60%, #28C898 100%);
+    box-shadow: 0 0 32px rgba(61, 255, 194, 0.6), 0 0 12px rgba(122, 255, 217, 0.8);
+  }
+  .b-violet {
+    background: radial-gradient(circle at 35% 30%, #C49CFF 0%, #A56BFF 60%, #7848C8 100%);
+    box-shadow: 0 0 32px rgba(165, 107, 255, 0.6), 0 0 12px rgba(196, 156, 255, 0.8);
+  }
+
+  /* Critical Gold 풍선 (R1 + R3 specular) */
+  .b-gold {
+    background: radial-gradient(circle at 35% 30%, #FFF0AA 0%, #FFD700 50%, #C89C00 100%);
+    box-shadow:
+      0 0 48px rgba(255, 215, 0, 0.8),
+      0 0 16px rgba(255, 240, 170, 1.0),
+      inset 0 0 20px rgba(255, 255, 200, 0.5);
+    animation: critical-pulse 1.5s ease-in-out infinite;
+  }
+  .b-gold::before {
+    background: rgba(255, 255, 220, 0.7);
+    width: 35%;
+    height: 35%;
+  }
+
+  /* 위치 + 사이즈 + 애니메이션 딜레이 */
+  .pos-1 { top: 18%; left: 22%; width: 72px; height: 72px; animation-delay: 0s; }
+  .pos-2 { top: 28%; left: 62%; width: 56px; height: 56px; animation-delay: -1.2s; }
+  .pos-3 { top: 42%; left: 16%; width: 64px; height: 64px; animation-delay: -2.4s; }
+  .pos-4 { top: 50%; left: 70%; width: 48px; height: 48px; animation-delay: -3.6s; }
+  .pos-critical { top: 14%; left: 70%; width: 52px; height: 52px; animation-delay: -1.8s; }
+
+  /* 풍선 부유 애니메이션 */
+  @keyframes float {
+    0%, 100% { transform: translateY(0) translateX(0); }
+    25% { transform: translateY(-8px) translateX(4px); }
+    50% { transform: translateY(0) translateX(8px); }
+    75% { transform: translateY(8px) translateX(0); }
+  }
+  @keyframes critical-pulse {
+    0%, 100% {
+      box-shadow:
+        0 0 48px rgba(255, 215, 0, 0.8),
+        0 0 16px rgba(255, 240, 170, 1.0),
+        inset 0 0 20px rgba(255, 255, 200, 0.5);
+    }
+    50% {
+      box-shadow:
+        0 0 64px rgba(255, 215, 0, 1.0),
+        0 0 24px rgba(255, 240, 170, 1.0),
+        inset 0 0 28px rgba(255, 255, 220, 0.8);
+    }
+  }
+
+  /* ─── 캐릭터 (Cute Glass Figurine) — SVG, 둥근 카툰 톤 ─── */
+  .character-wrapper {
+    position: absolute;
+    bottom: 88px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 65px;
+    height: 95px;
+    filter: drop-shadow(0 0 12px rgba(180, 220, 255, 0.6));
+  }
+
+  /* ─── 작살 (Harpoon) — Pang 오리지널 스타일: 와이어 + 갈고리 ─── */
+  .harpoon-wrapper {
+    position: absolute;
+    bottom: 168px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 24px;
+    height: 200px;
+    pointer-events: none;
+    filter: drop-shadow(0 0 6px rgba(180, 220, 255, 0.7));
+  }
+
+  /* ─── UI: Score Panel (R3 Liquid Glass) ─── */
+  .ui-score {
+    position: absolute;
+    top: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 10px 20px;
+    background: rgba(255, 255, 255, 0.18);
+    backdrop-filter: blur(12px) saturate(140%);
+    -webkit-backdrop-filter: blur(12px) saturate(140%);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    border-radius: 16px;
+    font-size: 18px;
+    font-weight: 500;
+    letter-spacing: 1px;
+    color: rgba(40, 30, 60, 0.85);
+    box-shadow:
+      0 4px 16px rgba(0, 0, 0, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.5);
+    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.4);
+  }
+
+  /* ─── 콤보 인디케이터 (캐릭터 주변 글로우) ─── */
+  .combo-indicator {
+    position: absolute;
+    bottom: 70px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: rgba(255, 200, 100, 0.9);
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 2px;
+    text-shadow: 0 0 12px rgba(255, 200, 100, 1);
+    animation: combo-pulse 1.2s ease-in-out infinite;
+  }
+  @keyframes combo-pulse {
+    0%, 100% { opacity: 0.85; transform: translateX(-50%) scale(1); }
+    50% { opacity: 1; transform: translateX(-50%) scale(1.05); }
+  }
+
+  /* ─── Critical 다크닝 변형 ─── */
+  .mock-frame.critical-state .sky-bg {
+    background: linear-gradient(
+      180deg,
+      #1a3a55 0%,
+      #2d2855 50%,
+      #1a1a3a 100%
+    );
+    transition: background 0.3s ease;
+  }
+  .mock-frame.critical-state::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+      circle at center,
+      rgba(255, 255, 255, 0.3) 0%,
+      rgba(255, 215, 0, 0.15) 30%,
+      transparent 70%
+    );
+    pointer-events: none;
+  }
+
+  /* ─── 팔레트 표 (참고) ─── */
+  .palette {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+  }
+  .swatch {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+    text-align: center;
+    padding: 4px;
+  }
+
+  /* ─── 캡션 ─── */
+  .caption {
+    text-align: center;
+    color: #888;
+    font-size: 12px;
+    margin-top: 8px;
+  }
+
+  /* ─── 라벨 (mockup 위 작은 주석) ─── */
+  .label {
+    position: absolute;
+    background: rgba(0, 0, 0, 0.7);
+    color: #aaffcc;
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    pointer-events: none;
+    font-family: monospace;
+    z-index: 10;
+  }
+
+  .legend {
+    margin-top: 32px;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    line-height: 1.7;
+  }
+  .legend code {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 11px;
+  }
+</style>
+</head>
+<body>
+
+<h1>POP! — Visual Sample 01</h1>
+<p class="meta">Neon Glassblowing on Frosted Sky + Adaptive Darkening · 2026-05-30 · /art-bible Phase 1</p>
+
+<div class="container">
+
+  <!-- Mock A: 일반 플레이 상태 -->
+  <div>
+    <div class="mock-frame">
+      <div class="sky-bg"></div>
+
+      <!-- UI -->
+      <div class="ui-score">SCORE 1,247</div>
+
+      <!-- 풍선들 (다양한 사이즈·색) -->
+      <div class="balloon b-magenta pos-1"></div>
+      <div class="balloon b-cyan pos-2"></div>
+      <div class="balloon b-lime pos-3"></div>
+      <div class="balloon b-violet pos-4"></div>
+      <div class="balloon b-gold pos-critical"></div>
+
+      <!-- 작살 (Pang 오리지널 스타일: 나선형 비드 체인 + 화살촉) -->
+      <div class="harpoon-wrapper">
+        <svg viewBox="0 0 24 200" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <radialGradient id="beadGrad" cx="40%" cy="35%" r="60%">
+              <stop offset="0%" stop-color="rgba(255,255,255,1)" />
+              <stop offset="60%" stop-color="rgba(220,240,255,0.95)" />
+              <stop offset="100%" stop-color="rgba(160,200,240,0.85)" />
+            </radialGradient>
+            <linearGradient id="arrowGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stop-color="rgba(255,255,255,1)" />
+              <stop offset="100%" stop-color="rgba(200,230,255,0.95)" />
+            </linearGradient>
+          </defs>
+
+          <!-- 나선형 비드 체인 (지그재그 비드로 spiral 표현) -->
+          <g fill="url(#beadGrad)" stroke="rgba(255,255,255,0.4)" stroke-width="0.3">
+            <circle cx="9" cy="195" r="2.8" />
+            <circle cx="15" cy="189" r="2.8" />
+            <circle cx="9" cy="183" r="2.8" />
+            <circle cx="15" cy="177" r="2.8" />
+            <circle cx="9" cy="171" r="2.8" />
+            <circle cx="15" cy="165" r="2.8" />
+            <circle cx="9" cy="159" r="2.8" />
+            <circle cx="15" cy="153" r="2.8" />
+            <circle cx="9" cy="147" r="2.8" />
+            <circle cx="15" cy="141" r="2.8" />
+            <circle cx="9" cy="135" r="2.8" />
+            <circle cx="15" cy="129" r="2.8" />
+            <circle cx="9" cy="123" r="2.8" />
+            <circle cx="15" cy="117" r="2.8" />
+            <circle cx="9" cy="111" r="2.8" />
+            <circle cx="15" cy="105" r="2.8" />
+            <circle cx="9" cy="99" r="2.8" />
+            <circle cx="15" cy="93" r="2.8" />
+            <circle cx="9" cy="87" r="2.8" />
+            <circle cx="15" cy="81" r="2.8" />
+            <circle cx="9" cy="75" r="2.8" />
+            <circle cx="15" cy="69" r="2.8" />
+            <circle cx="9" cy="63" r="2.8" />
+            <circle cx="15" cy="57" r="2.8" />
+            <circle cx="9" cy="51" r="2.8" />
+            <circle cx="15" cy="45" r="2.8" />
+            <circle cx="9" cy="39" r="2.8" />
+            <circle cx="15" cy="33" r="2.8" />
+            <circle cx="9" cy="27" r="2.8" />
+            <circle cx="15" cy="21" r="2.8" />
+          </g>
+
+          <!-- 화살촉 (Arrowhead — 미늘 있는 클래식 harpoon point) -->
+          <polygon
+            points="12,1 5,16 9,15 9,19 15,19 15,15 19,16"
+            fill="url(#arrowGrad)"
+            stroke="rgba(180,220,255,0.9)"
+            stroke-width="0.5" />
+          <!-- 화살촉 광택 -->
+          <polygon points="12,3 10,12 12,11" fill="rgba(255,255,255,0.7)" />
+        </svg>
+      </div>
+
+      <!-- 캐릭터 (cute glass figurine, 둥근 카툰 톤 — v1 복원 + 약간의 디테일 추가) -->
+      <div class="character-wrapper">
+        <svg viewBox="0 0 65 95" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <radialGradient id="bodyGrad" cx="35%" cy="30%" r="60%">
+              <stop offset="0%" stop-color="rgba(220,240,255,0.85)" />
+              <stop offset="60%" stop-color="rgba(160,200,240,0.65)" />
+              <stop offset="100%" stop-color="rgba(100,140,200,0.55)" />
+            </radialGradient>
+            <radialGradient id="headGrad" cx="40%" cy="35%" r="55%">
+              <stop offset="0%" stop-color="rgba(255,210,230,0.9)" />
+              <stop offset="50%" stop-color="rgba(255,160,200,0.75)" />
+              <stop offset="100%" stop-color="rgba(200,110,160,0.6)" />
+            </radialGradient>
+            <filter id="charGlow">
+              <feGaussianBlur stdDeviation="2" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+
+          <!-- 다리 (짧고 둥근 카툰 톤) -->
+          <ellipse cx="24" cy="83" rx="7" ry="10" fill="url(#bodyGrad)" filter="url(#charGlow)" />
+          <ellipse cx="41" cy="83" rx="7" ry="10" fill="url(#bodyGrad)" filter="url(#charGlow)" />
+
+          <!-- 몸통 (둥근 큰 ellipse — cute) -->
+          <ellipse cx="32.5" cy="58" rx="16" ry="20" fill="url(#bodyGrad)" filter="url(#charGlow)" />
+          <!-- 몸통 광택 -->
+          <ellipse cx="27" cy="50" rx="4.5" ry="6.5" fill="rgba(255,255,255,0.55)" />
+
+          <!-- 팔 (둥글게 위로 들음) -->
+          <ellipse cx="19" cy="42" rx="5" ry="11" fill="url(#bodyGrad)" filter="url(#charGlow)" transform="rotate(-20 19 42)" />
+          <ellipse cx="46" cy="42" rx="5" ry="11" fill="url(#bodyGrad)" filter="url(#charGlow)" transform="rotate(20 46 42)" />
+          <!-- 양손 (작살 잡음 — 머리 위) -->
+          <circle cx="32.5" cy="32" r="5" fill="rgba(180,220,255,0.85)" filter="url(#charGlow)" />
+
+          <!-- 머리 (큰 원 — chibi 비율, cute) -->
+          <circle cx="32.5" cy="20" r="14" fill="url(#headGrad)" filter="url(#charGlow)" />
+          <!-- 머리 광택 (반짝) -->
+          <ellipse cx="27" cy="14" rx="3.5" ry="4.5" fill="rgba(255,255,255,0.7)" />
+          <!-- 미세 미소 디테일 -->
+          <path d="M 28 24 Q 32.5 27 37 24" stroke="rgba(120,60,100,0.55)" stroke-width="1" fill="none" stroke-linecap="round" />
+          <!-- 작은 점 두 개 (눈 — 살짝만, 너무 인간적이지 않게) -->
+          <circle cx="28.5" cy="18" r="1" fill="rgba(80,40,90,0.7)" />
+          <circle cx="36.5" cy="18" r="1" fill="rgba(80,40,90,0.7)" />
+        </svg>
+      </div>
+
+      <!-- 라벨들 (디자인 노트) -->
+      <span class="label" style="top: 22%; left: 5%;">R1 글래스</span>
+      <span class="label" style="top: 14%; left: 50%;">R1+R3 Critical</span>
+      <span class="label" style="top: 30px; right: 8px;">R3 Liquid Glass UI</span>
+      <span class="label" style="bottom: 220px; left: 5%;">R1 작살 (나선 비드+화살촉, Pang 오리지널)</span>
+      <span class="label" style="bottom: 60px; left: 5%;">Character (humanoid)</span>
+    </div>
+    <p class="caption">A. 일반 플레이 상태 (Frosted Sky base)</p>
+  </div>
+
+  <!-- Mock B: Critical 다크닝 순간 -->
+  <div>
+    <div class="mock-frame critical-state">
+      <div class="sky-bg"></div>
+
+      <div class="ui-score">SCORE 1,247</div>
+
+      <div class="balloon b-magenta pos-1"></div>
+      <div class="balloon b-cyan pos-2"></div>
+      <div class="balloon b-lime pos-3"></div>
+      <div class="balloon b-violet pos-4"></div>
+      <div class="balloon b-gold pos-critical"></div>
+
+      <div class="harpoon-wrapper">
+        <svg viewBox="0 0 24 200" xmlns="http://www.w3.org/2000/svg">
+          <!-- 나선형 비드 체인 (Critical 상태 — 흰색-핫) -->
+          <g fill="rgba(255,255,255,1)">
+            <circle cx="9" cy="195" r="2.8" />
+            <circle cx="15" cy="189" r="2.8" />
+            <circle cx="9" cy="183" r="2.8" />
+            <circle cx="15" cy="177" r="2.8" />
+            <circle cx="9" cy="171" r="2.8" />
+            <circle cx="15" cy="165" r="2.8" />
+            <circle cx="9" cy="159" r="2.8" />
+            <circle cx="15" cy="153" r="2.8" />
+            <circle cx="9" cy="147" r="2.8" />
+            <circle cx="15" cy="141" r="2.8" />
+            <circle cx="9" cy="135" r="2.8" />
+            <circle cx="15" cy="129" r="2.8" />
+            <circle cx="9" cy="123" r="2.8" />
+            <circle cx="15" cy="117" r="2.8" />
+            <circle cx="9" cy="111" r="2.8" />
+            <circle cx="15" cy="105" r="2.8" />
+            <circle cx="9" cy="99" r="2.8" />
+            <circle cx="15" cy="93" r="2.8" />
+            <circle cx="9" cy="87" r="2.8" />
+            <circle cx="15" cy="81" r="2.8" />
+            <circle cx="9" cy="75" r="2.8" />
+            <circle cx="15" cy="69" r="2.8" />
+            <circle cx="9" cy="63" r="2.8" />
+            <circle cx="15" cy="57" r="2.8" />
+            <circle cx="9" cy="51" r="2.8" />
+            <circle cx="15" cy="45" r="2.8" />
+            <circle cx="9" cy="39" r="2.8" />
+            <circle cx="15" cy="33" r="2.8" />
+            <circle cx="9" cy="27" r="2.8" />
+            <circle cx="15" cy="21" r="2.8" />
+          </g>
+          <!-- 화살촉 -->
+          <polygon points="12,1 5,16 9,15 9,19 15,19 15,15 19,16" fill="rgba(255,255,255,1)" />
+        </svg>
+      </div>
+
+      <div class="character-wrapper">
+        <svg viewBox="0 0 65 95" xmlns="http://www.w3.org/2000/svg">
+          <!-- Critical 다크닝: 흰색-핫 단일톤 (cute v1 비례) -->
+          <ellipse cx="24" cy="83" rx="7" ry="10" fill="rgba(255,255,255,0.95)" />
+          <ellipse cx="41" cy="83" rx="7" ry="10" fill="rgba(255,255,255,0.95)" />
+          <ellipse cx="32.5" cy="58" rx="16" ry="20" fill="rgba(255,255,255,0.95)" />
+          <ellipse cx="27" cy="50" rx="4.5" ry="6.5" fill="rgba(255,255,255,1)" />
+          <ellipse cx="19" cy="42" rx="5" ry="11" fill="rgba(255,255,255,0.95)" transform="rotate(-20 19 42)" />
+          <ellipse cx="46" cy="42" rx="5" ry="11" fill="rgba(255,255,255,0.95)" transform="rotate(20 46 42)" />
+          <circle cx="32.5" cy="32" r="5" fill="rgba(255,255,255,0.95)" />
+          <circle cx="32.5" cy="20" r="14" fill="rgba(255,210,230,0.95)" />
+        </svg>
+      </div>
+
+      <div class="combo-indicator">×8 CHAIN</div>
+
+      <span class="label" style="top: 50%; left: 50%; transform: translateX(-50%); background: rgba(255,215,0,0.9); color: #000;">CRITICAL — 0.2s 다크닝</span>
+    </div>
+    <p class="caption">B. Critical Pop 순간 (배경 다크닝 + 캐릭터 화이트 글로우)</p>
+  </div>
+</div>
+
+<!-- ─── 풍선 컬러 팔레트 참고 ─── -->
+<h2>풍선 컬러 팔레트 (R1 Neon Glass — 6색 + Gold)</h2>
+<div class="palette">
+  <div class="swatch b-magenta">Magenta<br>#FF3DA5</div>
+  <div class="swatch b-cyan">Cyan<br>#3DD9FF</div>
+  <div class="swatch b-lime">Lime<br>#B5FF3D</div>
+  <div class="swatch b-amber">Amber<br>#FFB73D</div>
+  <div class="swatch b-mint">Mint<br>#3DFFC2</div>
+  <div class="swatch b-violet">Violet<br>#A56BFF</div>
+  <div class="swatch b-gold">Gold<br>#FFD700<br>(Critical)</div>
+</div>
+
+<!-- ─── 디자인 노트 ─── -->
+<div class="legend">
+  <h3>이 샘플에서 보여주는 것</h3>
+  <ul style="margin-left: 20px;">
+    <li><strong>R1 (Neon Glassblowing)</strong>: 풍선 = 반투명 유리 + 내부 발광 + 외부 글로우 + rim highlight</li>
+    <li><strong>R2 (Frosted Sky)</strong>: 배경 그라데이션 <code>#B5D8E8 → #F5C2D4 → #C4B0E0</code> (스카이블루 → 소프트핑크 → 라벤더)</li>
+    <li><strong>R3 (Liquid Glass)</strong>: UI 점수 패널 = <code>backdrop-filter: blur(12px) saturate(140%)</code> + 흰색 보더 + 미세 그림자</li>
+    <li><strong>Critical 다크닝</strong>: 0.2초 동안 배경 → 딥 쿨블루로 전환, 풍선/캐릭터는 흰색-핫 글로우. P3 필러("운은 자주, 실력은 깊게")의 시청각 표현</li>
+    <li><strong>캐릭터 (humanoid glass figure)</strong>: 작은 유리 인형. 머리·몸통·팔·다리. 작살 잡는 자세. drop-shadow 글로우로 떠다니는 듯한 느낌</li>
+    <li><strong>작살</strong>: 흰색-시안 그라데이션 + 화살촉. 풍선과 같은 유리 어휘</li>
+    <li><strong>콤보 인디케이터</strong>: P2 필러("화면이 점수보다 먼저 말한다") — "×8 CHAIN" 텍스트는 캐릭터 주변에 글로우 펄스</li>
+  </ul>
+
+  <h3 style="margin-top: 20px;">이 샘플에서 일부러 안 한 것 (디자인 결정)</h3>
+  <ul style="margin-left: 20px;">
+    <li><strong>다크 배경 거부</strong>: Critical 순간만 다크닝 (Mock B). 95% 시간은 라이트 (사용자 결정)</li>
+    <li><strong>비비드·만화 톤 거부</strong>: 채도 낮춤, 파스텔 베이스 (Suika Game 톤과 의도적 차별화)</li>
+    <li><strong>픽셀·레트로 거부</strong>: 모든 요소가 부드러운 곡선·그라데이션 (Neon Glassblowing 정체성)</li>
+    <li><strong>장식 거부</strong>: 화면 가장자리 깔끔 (P2 필러 — 정보 우선)</li>
+  </ul>
+
+  <h3 style="margin-top: 20px;">기술 노트</h3>
+  <ul style="margin-left: 20px;">
+    <li>Pixi.js v8 구현 시: 풍선은 <code>Graphics</code> + radial gradient (또는 sprite + <code>@pixi/filter-glow</code>)</li>
+    <li>배경: 단일 <code>Sprite</code> with gradient texture, 또는 <code>Mesh</code> with vertex colors</li>
+    <li>UI: HTML overlay (CSS backdrop-filter 활용) 또는 Pixi Container + <code>BlurFilter</code></li>
+    <li>Critical 다크닝: 배경 sprite의 tint 보간 (0.2초) + 전체 화면 white flash overlay (0.1초)</li>
+    <li>캐릭터: SVG → Pixi sprite로 import, 또는 <code>Graphics</code>로 절차적 그리기</li>
+    <li>본 샘플의 모든 색상·블러·글로우 값은 art-bible §4 Color System 및 §7 UI Visual Language에 정확한 수치로 기록 예정</li>
+  </ul>
+</div>
+
+</body>
+</html>
