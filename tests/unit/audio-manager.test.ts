@@ -236,5 +236,30 @@ describe('AudioManager', () => {
       expect(warnSpy.mock.calls[0][0]).toContain('BGM URL not provided');
       warnSpy.mockRestore();
     });
+
+    it('D-P6-AUDIO-FIX: bgmFadeOut으로 gain=0 상태 후 bgmStart() 호출 시 _bgmGain.gain을 BGM_GAIN(0.55)으로 복원 (RETRY 시나리오)', async () => {
+      const runningCtx = makeMockCtx('running');
+      am.injectCtx(runningCtx);
+      // @ts-expect-error private 접근
+      const bgmGain = am._bgmGain;
+
+      // fetch + decodeAudioData mock — bgmStart의 try 블록 통과시키기
+      const fetchSpy = vi
+        .spyOn(globalThis, 'fetch')
+        .mockResolvedValue(
+          new Response(new ArrayBuffer(0), { status: 200 }),
+        );
+
+      // 이전 game:over fadeOut으로 gain=0 상태 시뮬레이션
+      bgmGain.gain.value = 0;
+
+      await am.bgmStart('/test.ogg');
+
+      // 회귀 검증: cancelScheduledValues + setValueAtTime(BGM_GAIN, currentTime) 호출
+      expect(bgmGain.gain.cancelScheduledValues).toHaveBeenCalled();
+      expect(bgmGain.gain.setValueAtTime).toHaveBeenCalledWith(0.55, 0);
+
+      fetchSpy.mockRestore();
+    });
   });
 });

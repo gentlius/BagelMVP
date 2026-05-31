@@ -40,7 +40,7 @@ export type SoundId =
 const MASTER_VOLUME = 0.7;   // 모바일 web 권장
 const BGM_GAIN = 0.55;       // BGM 기본 볼륨 (-5 dBFS) — D-P6-BGM-04 사용자 피드백 +4dB
 const BGM_DUCK_GAIN = 0.28;  // Critical 중 BGM ducking (-5 dBFS → -11 dBFS, 약 -6dB 폭 유지, GDD §4.2)
-const SFX_GAIN = 0.8;        // SFX bus gain (-2 dBFS) — D-P6-BGM-05 사용자 피드백: critical-pop 3-layer composite + BGM 대비 hot
+const SFX_GAIN = 0.5;        // SFX bus gain (-6 dBFS) — D-P6-AUDIO-FIX: SFX transient 인지 hot 보정 (BGM이 SFX critical보다 약간 우위가 되도록)
 
 // Per-SFX volume — visual-juice §Audio Note Mix 표
 const SFX_VOLUME: Record<SoundId, number> = {
@@ -180,6 +180,13 @@ export class AudioManager {
 
     const ctx = this._ensureCtx();
     if (!this._bgmGain) return;
+
+    // D-P6-AUDIO-FIX: 이전 game:over의 bgmFadeOut으로 _bgmGain.gain=0 상태일 수 있음
+    // (RETRY 후 reset() → game:start → bgmStart 흐름). 명시적으로 BGM_GAIN으로 복원하지 않으면
+    // 새 source.start() 후 첫 duck() 호출 전까지 silent — duck()의 setValueAtTime(BGM_GAIN)이
+    // 우연히 복원하던 잠재 버그.
+    this._bgmGain.gain.cancelScheduledValues(ctx.currentTime);
+    this._bgmGain.gain.setValueAtTime(BGM_GAIN, ctx.currentTime);
 
     try {
       const response = await fetch(url);
