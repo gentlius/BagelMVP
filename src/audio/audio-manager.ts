@@ -40,7 +40,7 @@ export type SoundId =
 const MASTER_VOLUME = 0.7;   // 모바일 web 권장
 const BGM_GAIN = 0.55;       // BGM 기본 볼륨 (-5 dBFS) — D-P6-BGM-04 사용자 피드백 +4dB
 const BGM_DUCK_GAIN = 0.28;  // Critical 중 BGM ducking (-5 dBFS → -11 dBFS, 약 -6dB 폭 유지, GDD §4.2)
-const SFX_GAIN = 1.0;        // SFX bus gain (per-call volume이 세부 조정)
+const SFX_GAIN = 0.8;        // SFX bus gain (-2 dBFS) — D-P6-BGM-05 사용자 피드백: critical-pop 3-layer composite + BGM 대비 hot
 
 // Per-SFX volume — visual-juice §Audio Note Mix 표
 const SFX_VOLUME: Record<SoundId, number> = {

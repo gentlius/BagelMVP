@@ -383,6 +383,7 @@ SCORE_POPUP_POOL_SIZE   = 20
 | `CHAR_GLOW_DURATION_SEC` | `0.20` s | `0.10–0.30` | 캐릭터 화이트-핫 GlowFilter swap duration. 다크닝 총 시퀀스(0.20s)와 정합 권장 |
 | `WHITE_FLASH_ALPHA` | 0.6 | 0.4–0.8 | 화이트 플래시 강도 |
 | `BGM_DUCK_GAIN` | 0.28 | 0.15–0.40 | Critical 중 BGM ducking 볼륨 (기본 0.55 → 0.28, 약 -6dB 폭 유지) |
+| `SFX_GAIN` | 0.8 | 0.6–1.0 | SFX bus 전체 감쇠 (-2 dBFS). per-SFX volume 비율은 §Audio Note Mix 표 유지, critical-pop 3-layer composite hot 보정용 |
 | `GAMEOVER_FADE_DURATION` | 0.5 s | 0.3–1.0 | game:over 게임플레이 layer alpha fade |
 
 ---
@@ -524,7 +525,7 @@ SCORE_POPUP_POOL_SIZE   = 20
 const ctx = new AudioContext()           // 초기 state: 'suspended' (브라우저 autoplay 정책)
 const buffers = new Map()
 const bgmGain = ctx.createGain(); bgmGain.gain.value = 0.55; bgmGain.connect(ctx.destination)
-const sfxGain = ctx.createGain(); sfxGain.gain.value = 1.0;  sfxGain.connect(ctx.destination)
+const sfxGain = ctx.createGain(); sfxGain.gain.value = 0.8;  sfxGain.connect(ctx.destination)
 let bgmNode = null
 
 // AudioContext unlock — input-system 첫 fire/drag 핸들러에서 호출 (B2)
