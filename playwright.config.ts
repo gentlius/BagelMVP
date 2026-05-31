@@ -39,7 +39,12 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'npm.cmd run build && npm.cmd run preview -- --port 4173',
+    // Windows (PowerShell ExecutionPolicy Restricted)는 `.ps1` shim 차단 → `npm.cmd` 명시 필요.
+    // Linux/macOS는 `npm`만 존재 (`.cmd`는 ENOENT). cross-platform 분기.
+    command:
+      process.platform === 'win32'
+        ? 'npm.cmd run build && npm.cmd run preview -- --port 4173'
+        : 'npm run build && npm run preview -- --port 4173',
     port: 4173,
     timeout: 120_000,      // build (2s) + startup margin
     reuseExistingServer: !process.env['CI'],
