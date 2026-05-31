@@ -1,0 +1,28 @@
+{
+  "name": "pop-prototype",
+  "version": "0.1.0-proto.1",
+  "type": "module",
+  "private": true,
+  "description": "POP! — Pang modernization for HTML5 mobile web",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run --exclude tests/e2e/**",
+    "test:e2e": "playwright test",
+    "analyze": "vite build",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "pixi.js": "^8.0.0",
+    "pixi-filters": "^6.0.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.40.0",
+    "@types/node": "^20.0.0",
+    "rollup-plugin-visualizer": "^5.9.0",
+    "typescript": "^5.0.0",
+    "vite": "^5.0.0",
+    "vitest": "^1.0.0"
+  }
+}

@@ -229,7 +229,7 @@ Critical pop at (300, 400), CHAIN_RADIUS=150px → 인근 (200, 500), (400, 350)
 
 | ID | 기준 | 검증 방법 |
 |----|------|---------|
-| AC.1 | **PG-04 — 첫 3런 안 90% 테스터 Critical 목격** (P3 보장, m0 §3.2). §4.2 lottery + Pity 합성 96% 이론값 | playtest (테스터 ≥5명, `production/qa/evidence/critical-witness-YYYY-MM-DD.md`) |
+| AC.1 | **PG-04 — 첫 3런 안 90% 테스터 Critical 목격** (P3 보장, m0 §3.2). §4.2 lottery + Pity 합성 96% 이론값 | playtest (테스터 ≥5명) — evidence 별도 폴더 기록 |
 | AC.2 | `rng.critical.nextBool(0.10)` lottery — 1000 spawn Monte Carlo 통계 시 Critical 비율 10% ± 2% (`σ ≈ 0.0095`, ±2σ ≈ 96% CI) | unit test |
 | AC.3 | Pity timer 90s 정확 — 무 Critical 90s 경과 시 즉시 transmute 발동 | unit test (mock ticker) |
 | AC.4 | Pity 발동 시 character와 2D 거리 (`distSq`) 최소 active balloon 1개 Critical 부여. 동률 시 `reduce` 순회 첫 발견 (deterministic) | unit test |
@@ -269,21 +269,21 @@ Critical pop at (300, 400), CHAIN_RADIUS=150px → 인근 (200, 500), (400, 350)
 
 ### AC → 테스트 매핑 (Phase D 후 채움)
 
-| AC | Test Method | 파일 |
-|----|-----------|------|
-| AC.1 (PG-04 목격) | playtest | `production/qa/evidence/critical-witness-YYYY-MM-DD.md` |
-| AC.2 (Lottery 통계) | unit (Monte Carlo 1000회) | `tests/unit/critical-lottery.test.js` |
-| AC.3 (Pity 90s) | unit (mock ticker) | `tests/unit/critical-pity.test.js` |
-| AC.4 (Nearest 2D + 동률) | unit | `tests/unit/critical-pity.test.js` |
-| AC.5 (Chain cap + 거리 정렬) | unit | `tests/unit/critical-chain.test.js` |
-| AC.6 (재귀 방지) | unit | `tests/unit/critical-chain.test.js` |
-| AC.7 (Payload + 빈 배열) | unit | `tests/unit/critical-event.test.js` |
-| AC.8 (Determinism) | unit (seeded rng) | `tests/unit/critical-determinism.test.js` |
-| AC.9 (Reset) | unit | `tests/unit/gameloop-reset.test.js` |
-| AC.10 (Visual Juice integration) | integration (Visual Juice GDD 완성 후) — M0는 manual smoke | `tests/integration/critical-darken.test.js` |
-| AC.11 (Visual entity 매핑) | unit | `tests/unit/critical-visual.test.js` |
-| AC.12 (E2 active=0) | unit | `tests/unit/critical-pity.test.js` |
-| AC.13 (E9 chained Critical) | unit | `tests/unit/critical-chain.test.js` |
+| AC | Test Method |
+|----|-------------|
+| AC.1 (PG-04 목격) | playtest — evidence 별도 폴더 기록 |
+| AC.2 (Lottery 통계) | unit (Monte Carlo 1000회) |
+| AC.3 (Pity 90s) | unit (mock ticker) |
+| AC.4 (Nearest 2D + 동률) | unit |
+| AC.5 (Chain cap + 거리 정렬) | unit |
+| AC.6 (재귀 방지) | unit |
+| AC.7 (Payload + 빈 배열) | unit |
+| AC.8 (Determinism) | unit (seeded rng) |
+| AC.9 (Reset) | unit |
+| AC.10 (Visual Juice integration) | integration (Visual Juice GDD 완성 후) — M0는 manual smoke |
+| AC.11 (Visual entity 매핑) | unit |
+| AC.12 (E2 active=0) | unit |
+| AC.13 (E9 chained Critical) | unit |
 
 ### 빌드 검증
 

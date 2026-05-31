@@ -542,17 +542,17 @@ Approved 조건: 본 섹션 전 체크박스 완료 + QA Lead 서명.
 
 구현자는 인스턴스화 및 리스너 바인딩 시 아래 명시된 모듈 구조와 호출 경로를 엄격히 준수.
 
-- **인스턴스 초기화 주체**: `src/main.ts`
+- **인스턴스 초기화 주체**: main entry (systems-index §Engine Bootstrap + §Wiring Contract W-RULE-04)
   - 호출 가이드: Pixi.js Application 컨텍스트 초기화 직후, URL 파라미터 파싱 결과(`Number` 형변환 완료본)를 주입하며 생성자 호출
   - 코드 구조: `const inputSystem = new InputSystem(app, parseUrlOptions());`
 
-- **라이프사이클 매니저**: `src/systems/game-state-manager.ts`
+- **라이프사이클 매니저**: game state manager component
   - 게임 상태 매니저가 인게임 핵심 루프 `'playing'` 상태로 진입/이탈할 때 시스템 제어권 트리거
   - 진입(`enterState('playing')`): `inputSystem.attach();` — Pixi v8 Federated Listener 5종 + DOM Window Listener 1종 등록
   - 이탈(`exitState('playing')`): `inputSystem.detach();` — 등록된 모든 리스너 일제 해제 및 내부 메모리 버퍼 초기화
 
 - **다운스트림 이벤트 구독 주체 (Consumers)**:
-  - `src/systems/character-controller.ts` 및 `src/systems/harpoon-system.ts` 모듈은 주입받은 InputSystem 인스턴스의 표준 EventEmitter API를 사용하여 5대 입력 신호(`input:fire`, `input:dragStart`, `input:dragMove`, `input:dragEnd`, `input:dragCancel`)를 상시 구독
+  - balloon-physics-split System (character + harpoon 흡수) 모듈이 주입받은 InputSystem 인스턴스의 표준 EventEmitter API를 사용하여 5대 입력 신호(`input:fire`, `input:dragStart`, `input:dragMove`, `input:dragEnd`, `input:dragCancel`)를 상시 구독
 
 ### I.2 런타임 의존성 무결성 확인 (Sanity Check)
 
@@ -568,29 +568,29 @@ Approved 조건: 본 섹션 전 체크박스 완료 + QA Lead 서명.
 
 테스트 구동 환경: Unit/Integration 테스트는 `environment: 'happy-dom'` 또는 `'jsdom'` 조건. Perf 테스트는 고정 루프 연산 스펙 측정.
 
-| 사양 ID | 대상 테스트 파일 경로 | 매핑 유닛 테스트 함수명 |
-|---------|---------------------|----------------------|
-| AC.1.1 | `tests/unit/input-system/state-machine.test.ts` | `test('IDLE → POINTER_DOWN on pointerdown')` |
-| AC.1.2 | `tests/unit/input-system/state-machine.test.ts` | `test('POINTER_DOWN → DRAGGING on movement > dragThreshold')` |
-| AC.1.3 | `tests/unit/input-system/state-machine.test.ts` | `test('POINTER_DOWN stays on movement ≤ dragThreshold')` |
-| AC.1.4 | `tests/unit/input-system/state-machine.test.ts` | `test('DRAGGING emits dragMove per pointermove with world coords')` |
-| AC.1.5 | `tests/unit/input-system/state-machine.test.ts` | `test('DRAGGING → IDLE on pointerup emits dragEnd')` |
-| AC.1.6 | `tests/unit/input-system/state-machine.test.ts` | `test('DRAGGING → IDLE on pointercancel emits dragCancel')` |
-| AC.2.1~4 | `tests/unit/input-system/v1-variant.test.ts` | `test('V1: short tap within max duration emits fire')` / `test('V1: long press exceeding max duration suppresses fire')` / `test('V1: tap within guard time window is suppressed')` / `test('V1: tap after guard time window passes successfully fires')` |
-| AC.3.1~5 | `tests/unit/input-system/v2-variant.test.ts` | `test('V2: first tap does not fire but records stamp and pos')` / `test('V2: second tap within window and max distance successfully fires')` / `test('V2: second tap outside window timing updates new first tap')` / `test('V2: second tap exceeding distance constraint suppresses fire')` / `test('V2: immediate drag intent during second down cancels double-tap')` |
-| AC.4.1~3 | `tests/unit/input-system/payload.test.ts` | `test('all exported coords are properly localized via stage.toLocal')` / `test('fire event payload strictly returns empty object {}')` / `test('dragMove payload maintains exact type structural match with Vec2')` |
-| AC.5.1 | `tests/unit/input-system/multi-touch.test.ts` | `test('secondary pointerdown events with different pointerId are completely ignored')` |
-| AC.5.2 | `tests/unit/input-system/visibility.test.ts` | `test('visibilitychange to hidden triggers dragCancel during active drag')` |
-| AC.5.3 | `tests/integration/input-system/resize.test.ts` | `test('subsequent dragMove coordinates accurately map to new viewport after resize')` |
-| AC.5.4 | `tests/unit/input-system/storage-failure.test.ts` | `test('localStorage blocker scenarios are silently caught with console.warn')` |
-| AC.6.1 | `tests/perf/input-system/throughput.test.ts` | `test('processing 60 pointermoves sequentially consumes less than 0.6ms CPU time')` |
-| AC.6.2 | `tests/perf/input-system/stress.test.ts` | `test('rapid stress stream of 100 events/sec maintains zero frame drops')` |
-| AC.6.3 | `tests/unit/input-system/lifecycle.test.ts` | `test('attach registers exactly 6 active native/federated listeners')` / `test('detach purges all 6 registered listeners leaving zero memory leaks')` |
-| AC.7.1~2 | `tests/integration/input-system/url-injection.test.ts` | `test('initialization natively parses ?variant string values')` / `test('url parameters apply numerical type parsing before injection')` |
-| AC.7.3 | `tests/integration/input-system/ab-logging.test.ts` | `test('game over pipeline successfully serializes session arrays to localStorage')` |
-| AC.7.4 | `tests/integration/input-system/dev-console.test.ts` | `test('window.__inputSystem exposes dynamic variant switching in development')` |
-| AC.7.5 | `tests/integration/input-system/prod-isolation.test.ts` | `test('global window binding resolves to undefined in production environments')` |
-| AC.8.1~2 | (수동 프로세스) | 5인 베타테스터 실기 플레이 후 정성 회의록 + 최종 결정 sign-off로 검증 |
+| 사양 ID | Test Method | 매핑 유닛 테스트 함수명 |
+|---------|-------------|----------------------|
+| AC.1.1 | unit | `test('IDLE → POINTER_DOWN on pointerdown')` |
+| AC.1.2 | unit | `test('POINTER_DOWN → DRAGGING on movement > dragThreshold')` |
+| AC.1.3 | unit | `test('POINTER_DOWN stays on movement ≤ dragThreshold')` |
+| AC.1.4 | unit | `test('DRAGGING emits dragMove per pointermove with world coords')` |
+| AC.1.5 | unit | `test('DRAGGING → IDLE on pointerup emits dragEnd')` |
+| AC.1.6 | unit | `test('DRAGGING → IDLE on pointercancel emits dragCancel')` |
+| AC.2.1~4 | unit | `test('V1: short tap within max duration emits fire')` / `test('V1: long press exceeding max duration suppresses fire')` / `test('V1: tap within guard time window is suppressed')` / `test('V1: tap after guard time window passes successfully fires')` |
+| AC.3.1~5 | unit | `test('V2: first tap does not fire but records stamp and pos')` / `test('V2: second tap within window and max distance successfully fires')` / `test('V2: second tap outside window timing updates new first tap')` / `test('V2: second tap exceeding distance constraint suppresses fire')` / `test('V2: immediate drag intent during second down cancels double-tap')` |
+| AC.4.1~3 | unit | `test('all exported coords are properly localized via stage.toLocal')` / `test('fire event payload strictly returns empty object {}')` / `test('dragMove payload maintains exact type structural match with Vec2')` |
+| AC.5.1 | unit | `test('secondary pointerdown events with different pointerId are completely ignored')` |
+| AC.5.2 | unit | `test('visibilitychange to hidden triggers dragCancel during active drag')` |
+| AC.5.3 | integration | `test('subsequent dragMove coordinates accurately map to new viewport after resize')` |
+| AC.5.4 | unit | `test('localStorage blocker scenarios are silently caught with console.warn')` |
+| AC.6.1 | perf | `test('processing 60 pointermoves sequentially consumes less than 0.6ms CPU time')` |
+| AC.6.2 | perf | `test('rapid stress stream of 100 events/sec maintains zero frame drops')` |
+| AC.6.3 | unit | `test('attach registers exactly 6 active native/federated listeners')` / `test('detach purges all 6 registered listeners leaving zero memory leaks')` |
+| AC.7.1~2 | integration | `test('initialization natively parses ?variant string values')` / `test('url parameters apply numerical type parsing before injection')` |
+| AC.7.3 | integration | `test('game over pipeline successfully serializes session arrays to localStorage')` |
+| AC.7.4 | integration | `test('window.__inputSystem exposes dynamic variant switching in development')` |
+| AC.7.5 | integration | `test('global window binding resolves to undefined in production environments')` |
+| AC.8.1~2 | playtest — evidence 별도 폴더 기록 | 5인 베타테스터 실기 플레이 후 정성 회의록 + 최종 결정 sign-off로 검증 |
 
 ### I.4 빌드 프로덕션 및 게이트 키핑 (Build Verification)
 

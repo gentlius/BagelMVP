@@ -98,6 +98,8 @@ const uiContainer       = new Container(); app.stage.addChild(uiContainer);
 app.destroy(true, { children: true, texture: true });
 ```
 
+> **Wiring 의무**: factory 호출 후 `attachListeners(eventBus)` 별도 호출, 1×1 texture sprite의 width/height 명시, Pixi EventEmitter → EventBus forward — 모두 §Wiring Contract 의무 항목. 위반 시 typecheck/build/test 통과해도 visual/audio 효과가 발현되지 않을 수 있음 (사일런트 실패).
+
 ---
 
 ## §Conventions
@@ -127,12 +129,12 @@ export const rng = {
 - `rng.critical.nextBool(0.10)` — Critical 10% 확률 판정
 - `rng.powerup.nextChoice(['multishot', 'freeze', 'bomb'])` — Power-Up 선택
 
-### UI 문자열: ui-strings.js 단일 파일
+### UI 문자열: ui-strings 모듈 단일 소유
 
-모든 플레이어 노출 문자열은 `src/ui-strings.js` 한 파일에 집중. Pixi `Text` 인스턴스 생성 시 직접 문자열 리터럴 금지.
+모든 플레이어 노출 문자열은 `ui-strings` 모듈 (conventions 영역) 한 파일에 집중. Pixi `Text` 인스턴스 생성 시 직접 문자열 리터럴 금지.
 
 ```js
-// src/ui-strings.js
+// ui-strings module
 export const UI = {
   gameOver: '게임 오버',
   retry:    'Try Again',
@@ -158,6 +160,221 @@ const scoreText = new Text({ text: UI.score(currentScore), style: scoreStyle });
 ### 외부 런타임 fetch 금지
 
 게임은 완전 self-contained. CDN 의존성 0건. 모든 자산은 build 시 bundle.
+
+---
+
+## §Wiring Contract — 시스템 wiring 의무 항목
+
+본 절은 시스템 간 wiring 시 준수해야 할 3개 의무를 정의한다. 위반 시 typecheck/build/test 모두 통과(console.error 0)해도 visual/audio 효과가 발현되지 않는 **사일런트 실패** 상태가 된다 — 자동 검증으로 검출되지 않으므로 모든 dev/AI agent가 wiring 시점에 명시적으로 준수해야 한다.
+
+### W-RULE-01: Factory + attachListeners 분리 패턴
+
+**규칙**: `attachVisualJuice(opts)`, `attachHUD(...)`, `attachAboutModal(...)` 같은 factory 함수는 **instance + resource만 생성**. EventBus listener 등록은 **별도 `instance.attachListeners(bus)` 호출 의무**.
+
+**의무 호출 순서** (GameLoop.init() 안):
+1. `this._visualJuice = attachVisualJuice({ ... })` — instance + sub-systems + textures 초기화
+2. `this._visualJuice.attachListeners(eventBus)` — **명시적 listener 등록** (P2 lock 보존: `score-combo.attachListeners()`보다 먼저)
+3. `this._scoreCombo.attachListeners()` (P2 lock 두 번째)
+
+**누락 증상**: 모든 시각 효과 사일런트. `balloon:popped` / `balloon:split` / `criticalPop:fired` 모두 ignore. console.error 0 (no-op이지 error 아님). e2e test 통과.
+
+**왜 분리?**: factory가 listener 자동 등록 시 호출 시점 제어 불가 — P2 lock("화면이 점수보다 먼저 말한다") 보존 위해 명시적 분리. visual-juice 모듈은 `attachListeners(eventBus)` API를 별도 export하고 docstring으로 "MUST be called BEFORE ScoreComboSystem.attachListeners()" 명시. 정답 wiring 패턴은 §Wiring Contract W-RULE-04 skeleton 참조.
+
+### W-RULE-02: 1×1 Texture sprite는 width/height 명시 의무
+
+**규칙**: Pixi v8 `Graphics.rect(0, 0, 1, 1).fill(color); renderer.generateTexture(g)` 패턴은 **1×1 픽셀 texture**. 이 texture로 생성한 sprite는 default width/height 1×1 — 화면에 1픽셀 점으로 보임. **full-screen 또는 의도 size로 사용 시 sprite 생성 후 즉시 width/height + x/y 명시 의무**.
+
+**예시** (visual-juice 모듈 initTextures의 flash sprite + darken overlay):
+```typescript
+const flashG = new Graphics();
+flashG.rect(0, 0, 1, 1).fill(0xffffff);
+const flashTex = renderer.generateTexture(flashG);
+flashG.destroy();
+
+this._flashSprite = new Sprite(flashTex);
+this._flashSprite.width = this._app.screen.width;   // ← 의무
+this._flashSprite.height = this._app.screen.height; // ← 의무
+this._flashSprite.x = 0;                            // ← 권장 (default 0이지만 명시)
+this._flashSprite.y = 0;
+```
+
+**누락 증상**: 1픽셀 점이 (0, 0)에 표시. 사용자가 "엉망진창" 인지. typecheck PASS, console.error 0.
+
+### W-RULE-03: Pixi EventEmitter ↔ EventBus forward 의무
+
+**규칙**: InputSystem이 Pixi EventEmitter를 상속 (input-system §Detailed Rules) — `emit('input:fire')`는 Pixi-internal 채널이며 EventBus 구독자에게 전달되지 않는다. **다른 시스템 (AudioManager, VisualJuice, AudioContext unlock hook)이 listen하려면 GameLoop가 EventBus로 forward할 의무**.
+
+**의무 패턴** (GameLoop.init() input 핸들러):
+```typescript
+this._input.on('input:fire', () => {
+  this._balloonSystem.onFire();
+  eventBus.emit('input:fire', {});  // ← forward 의무
+});
+```
+
+**누락 증상**:
+- AudioContext.resume() 미호출 → 모바일 web 첫 user gesture 후에도 SFX/BGM 사일런트 가능 (브라우저별 차이)
+- harpoon-fire SFX 발동 0건 → 작살 발사 무음
+
+**적용 범위**: `input:fire` (필수). `input:dragStart/Move/End/Cancel`은 EventBus listener 0건 — forward 불필요 (current). 향후 cross-system listener 추가 시 동일 패턴 적용 의무.
+
+### W-RULE-04: main.ts + GameLoop.init() integration skeleton
+
+W-RULE-01/02/03 의무를 정확히 만족하는 정답 wiring 예시. 외부 dev/AI agent는 신규 구현/리팩터링 시 본 구조를 그대로 따라야 한다 (main entry 부트스트랩 + GameLoop.init() 패턴이 권위 출처).
+
+```typescript
+// src/main.ts skeleton
+import { Application, Container } from 'pixi.js';
+import { GameLoop } from './systems/game-loop.js';
+import { attachHUD } from './ui/hud.js';
+import { attachAboutModal } from './ui/about-modal.js';
+import { audioManager } from './audio/audio-manager.js';
+import { eventBus } from './events/event-bus.js';
+import { createFrostedSkyBackground } from './vfx/background.js';
+
+async function bootstrap() {
+  const app = new Application();
+  await app.init({
+    width: window.innerWidth,
+    height: window.innerHeight,
+    resolution: window.devicePixelRatio,
+    autoDensity: true,
+    background: '#B5D8E8', // Frosted Sky fallback (art-bible §1.2)
+    antialias: false,
+  });
+
+  const gameContainer = document.getElementById('game');
+  if (!gameContainer) throw new Error('Game container element not found');
+  gameContainer.appendChild(app.canvas);
+
+  // 5-container hierarchy (§Engine Bootstrap L1~L5 순서 의무)
+  const bgContainer = new Container();
+  const balloonContainer = new Container();
+  const harpoonContainer = new Container();
+  const vfxContainer = new Container();
+  const uiContainer = new Container();
+  app.stage.addChild(bgContainer);
+  bgContainer.addChild(createFrostedSkyBackground(app)); // sky sprite > app.init background
+  app.stage.addChild(balloonContainer);
+  app.stage.addChild(harpoonContainer);
+  app.stage.addChild(vfxContainer);
+  app.stage.addChild(uiContainer);
+
+  window.addEventListener('resize', () => {
+    app.renderer.resize(window.innerWidth, window.innerHeight);
+  });
+
+  return { app, containers: { bgContainer, balloonContainer, harpoonContainer, vfxContainer, uiContainer } };
+}
+
+bootstrap().then(({ app, containers }) => {
+  // AudioManager: globalThis 등록 + listener (W-RULE-01 factory/attachListeners 분리)
+  (globalThis as unknown as { audioManager: typeof audioManager }).audioManager = audioManager;
+  audioManager.attachListeners(eventBus);
+
+  // GameLoop: factory + init (attachListeners 자동 호출 없음 — W-RULE-01)
+  const gameLoop = new GameLoop(app, containers);
+  gameLoop.init();
+
+  // HUD overlay (uiContainer L5, sortableChildren 필요)
+  containers.uiContainer.sortableChildren = true;
+  attachHUD(containers.uiContainer, app);
+
+  // About 모달 (pause/resume API 의존)
+  attachAboutModal({
+    uiContainer: containers.uiContainer,
+    app,
+    pause: () => gameLoop.pause(),
+    resume: () => gameLoop.resume(),
+  });
+
+  gameLoop.start();
+}).catch((err) => {
+  // DOM fallback — process.exit 브라우저에 없음
+  const fallback = document.getElementById('game');
+  if (fallback) {
+    const msg = err instanceof Error ? err.message : String(err);
+    fallback.innerHTML = `<pre style="color:#900;padding:1rem;font-family:monospace;">POP! init failed: ${msg}</pre>`;
+  }
+});
+```
+
+```typescript
+// src/systems/game-loop.ts init() skeleton — W-RULE 의무 호출 순서
+init(): void {
+  const { balloonContainer, harpoonContainer } = this._containers;
+
+  // 1. 시스템 instantiate
+  this._balloonSystem = new BalloonPhysicsSplitSystem({
+    app: this._app, balloonContainer, harpoonContainer, eventBus,
+  });
+  this._criticalPop = new CriticalPopSystem(this._balloonSystem);
+  this._balloonSystem.criticalPop = this._criticalPop; // direct hook (D-P2-04, M0 §3.1)
+  this._scoreCombo = new ScoreComboSystem();
+  this._input = new InputSystem(this._app);
+  this._input.attach(); // PointerEvent listener 등록 의무 — 누락 시 모든 input ignore
+
+  // 2. Visual Juice: factory + attachListeners (W-RULE-01, P2 lock 첫 번째)
+  this._visualJuice = attachVisualJuice({
+    app: this._app,
+    bgContainer: this._containers.bgContainer,
+    balloonContainer: this._containers.balloonContainer,
+    harpoonContainer: this._containers.harpoonContainer,
+    vfxContainer: this._containers.vfxContainer,
+    uiContainer: this._containers.uiContainer,
+    characterPosition: () => {
+      const c = this._balloonSystem.getCharacter();
+      return { x: c.x, y: c.y };
+    },
+    getCharacterSprite: () => this._balloonSystem.getCharacter().sprite,
+  });
+  this._visualJuice.attachListeners(eventBus); // ← W-RULE-01 의무 (factory가 자동 호출 안 함)
+
+  // 3. Score & Combo attachListeners (P2 lock 두 번째 — FIFO 순서 = dispatch 순서)
+  this._scoreCombo.attachListeners();
+
+  // 4. Critical Pop: isCritical balloon:popped 수신
+  eventBus.on('balloon:popped', (p) => this._criticalPop.onBalloonPopped(p));
+
+  // 5. Input wiring + EventBus forward (W-RULE-03)
+  this._input.on('input:fire', () => {
+    this._balloonSystem.onFire();
+    eventBus.emit('input:fire', {}); // ← forward 의무 (AudioContext unlock + harpoon-fire SFX)
+  });
+  this._input.on('input:dragStart', (p) => this._balloonSystem.onDragStart(p.x));
+  this._input.on('input:dragMove', (p) => this._balloonSystem.onDragMove(p.x));
+  this._input.on('input:dragEnd', () => this._balloonSystem.onDragEnd());
+  this._input.on('input:dragCancel', () => this._balloonSystem.onDragEnd());
+
+  // 6. RETRY wiring
+  eventBus.on('input:retry', () => this.reset());
+
+  // 7. AudioContext unlock on first user gesture (visual-juice §3.7, D-P2-07)
+  eventBus.once('input:fire', () => {
+    const am = (globalThis as unknown as { audioManager?: { unlock?: () => void } }).audioManager;
+    am?.unlock?.();
+  });
+
+  // 8. Ticker single entry
+  this._app.ticker.add((ticker) => this.update(ticker));
+}
+```
+
+**핵심 의무 self-audit 체크리스트** (외부 dev 구현 후 즉시 확인):
+- [ ] `attachVisualJuice()` 호출 직후 `_visualJuice.attachListeners(eventBus)` 별도 호출 (W-RULE-01)
+- [ ] `_visualJuice.attachListeners()`가 `_scoreCombo.attachListeners()`보다 먼저 호출 (P2 lock)
+- [ ] visual-juice 내부 1×1 texture sprite는 생성 후 즉시 `width = app.screen.width` / `height = app.screen.height` 명시 (W-RULE-02)
+- [ ] `_input.on('input:fire')` 핸들러에 `eventBus.emit('input:fire', {})` forward 포함 (W-RULE-03)
+- [ ] `globalThis.audioManager = audioManager` 등록 (AudioContext unlock hook 의존)
+- [ ] `audioManager.attachListeners(eventBus)` 별도 호출 (W-RULE-01 — AudioManager도 동일 패턴)
+- [ ] `_input.attach()` 호출 (PointerEvent listener 등록 — 누락 시 모든 입력 무시)
+- [ ] `uiContainer.sortableChildren = true` (About 모달 zIndex 50/100이 HUD 위에 표시)
+
+### 자동 검증 한계
+
+W-RULE-01/02/03 위반은 console error를 발생시키지 않는다. typecheck + unit test + e2e smoke (console.error 0 기반) 모두 통과해도 사일런트 실패가 가능하므로, wiring 변경 후에는 **manual visual 검증이 필요**하다 (실기 실행 후 풍선 pop → 시각 효과·SFX 발현 확인).
+
+M1 polish 권장: Playwright screenshot diff (baseline vs current 비교)로 visual no-op 자동 검출.
 
 ---
 
@@ -269,6 +486,8 @@ const scoreText = new Text({ text: UI.score(currentScore), style: scoreStyle });
 | Game Concept | `design/gdd/game-concept.md` | Draft | 컨셉·필러·MVP 정의 소스 |
 | Art Bible | `design/art/art-bible.md` | Draft Complete (압축 in-place) | Visual Identity Anchor + Palette + Z-layer + Layered Translucency + Frosted Sky 절차 코드 + Bundle Budget |
 | Visual Contract Sample | `design/art/samples/01-character-balloon-sky.html` | Done | art-bible integration test |
+| UX Spec: HUD | `design/ux/hud.md` | Draft | Score/Combo/GAME OVER/RETRY 레이아웃 + 이벤트 wiring |
+| UX Spec: About Modal | `design/ux/about-modal.md` | Draft | ⓘ 버튼 + 크레딧 모달 레이아웃 + pause/resume 계약 |
 
 ---
 

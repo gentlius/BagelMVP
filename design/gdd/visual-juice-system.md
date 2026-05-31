@@ -2,7 +2,7 @@
 
 > **Status**: Draft (M0 prototype 1-pager, post-review v1.1)
 > **Author**: joywoni + Claude (audio-director 협업)
-> **Last Updated**: 2026-05-31 (정밀 리뷰 17건 반영 — BLOCKING 3 + MAJOR 6 + MINOR 8)
+> **Last Updated**: 2026-05-31
 > **Implements Pillar**: P2 (화면이 점수보다 먼저 말한다) — Visual·Audio 응답이 게임 상태 인지 주채널 / P3 (운은 자주, 실력은 깊게) — Critical 다크닝 + 5콤보 ring으로 극대 시각 보상
 > **Engine target**: Pixi.js v8 + Web Audio API
 > **Scope note**: M0 prototype 범위 1-pager. 9섹션 헤더 유지 + §Audio Note 흡수 (audio-director M0 Direction v2). M1 PROCEED 후 정식 GDD 승격.
@@ -22,9 +22,9 @@ Visual Juice System은 POP!의 **시청각 cross-cutting 피드백 단일 권한
 
 > **P2 listener lock**: `GameLoop.start()` 시 **Visual Juice listener를 Score & Combo보다 먼저 등록** → 시각·청각이 점수 emit 전에 발화 (score-combo §1 + §6).
 
-> **art-bible §1.2 + decisions §3 #13 Layered Translucency 귀속**: 파티클·5콤보 ring·Score popup·다크닝 overlay·화이트 플래시 = 모두 **bloom 레이어** (vfxContainer L3). 4층 ("frosted sky → balloon glass body → neon rim → bloom") 중 최상위.
+> **art-bible §1.2 Layered Translucency 귀속**: 파티클·5콤보 ring·Score popup·다크닝 overlay·화이트 플래시 = 모두 **bloom 레이어** (vfxContainer L3). 4층 ("frosted sky → balloon glass body → neon rim → bloom") 중 최상위.
 
-> **권한 경계**: vfxContainer (L3) + uiContainer (L4) + **bgContainer ColorMatrixFilter 적용 (game:over fade 시 게임플레이 layer alpha 변경 권한 예외)**. 그 외 다른 시스템 entity·container 절대 modify 금지. 데이터는 listen으로만 수신.
+> **권한 경계**: vfxContainer (L3) + uiContainer (L4) + **게임플레이 layer alpha 변경 (game:over fade — 권한 예외 1건)**. Critical 다크닝은 vfxContainer 내 `_darkenOverlay` sprite로 처리 (bgContainer ColorMatrixFilter 방식 폐기). 그 외 다른 시스템 entity·container 절대 modify 금지. 데이터는 listen으로만 수신.
 
 ---
 
@@ -44,18 +44,39 @@ Visual Juice System은 POP!의 **시청각 cross-cutting 피드백 단일 권한
 
 | 우선순위 | 이벤트 | 시각 영향 | 청각 영향 |
 |---------|--------|---------|---------|
-| 1 (최고) | `criticalPop:fired` | bgContainer 다크닝 (UI 보존) + 골드 림 + 화이트 플래시 (vfxContainer overlay) | critical SFX + BGM ducking -4dBFS 0.1s |
+| 1 (최고) | `criticalPop:fired` | **cool blue overlay (vfxContainer alpha 0→0.6→0)** + **캐릭터 화이트-핫 GlowFilter 0.20s** + 골드 림 + 화이트 플래시 + 50 chained particles | critical SFX + BGM ducking -4dBFS 0.1s |
 | 2 | `game:over` | 게임플레이 layer (bgContainer + balloonContainer + harpoonContainer) alpha fade out 0.5s (권한 예외) | gameover SFX + BGM fade-out 0.3s |
 | 3 | `combo:milestone (tier=5)` | 캐릭터 주변 글로우 ring 0.5s (HERO tier `#FFD700`) | combo_tier2 SFX (10ms delay — 마스킹 방지) |
 | 4 | `balloon:popped (isCritical: false)` | Pop particle (size별 차등) + Score popup at (x, y) | balloon_pop_large 또는 small SFX |
-| 5 | `balloon:split` | 자식 squash/stretch ±5% 시각 (art-bible §3.3) | (balloon_pop_large가 split + pop 겸임 — audio-director v2) |
+| 5 | `balloon:split` | **parent 위치 particle burst (parent.color, POP_PARTICLE_COUNT[parent.size])** + 자식 squash/stretch ±5% 시각 (art-bible §3.3) | (balloon_pop_large가 split + pop 겸임) |
 | 6 | `input:fire` | **M0 시각 효과 0** — harpoon entity spawn (balloon-physics-split §3.5)이 충분한 시각 응답으로 가정. **M1 retrofit: 캐릭터 launcher 끝 0.05s flash 검토** | harpoon SFX |
 | 7 | `score:updated` | Score popup at (x, y) — pool 20개 | (SFX 없음 — balloon:popped로 충분) |
-| 8 | `combo:reset` | **M0 시각·청각 0 단순화** (audio-director: "조용히 발생, 실패 신호 회피"). PG-06 playtest 시 "콤보 끊김 인지 부족" 피드백 수집 (AC.19) | — |
+| 8 | `combo:reset` | **M0 시각·청각 0 단순화** (콤보 끊김을 실패 신호로 강조하지 않고 조용히 처리). PG-06 playtest 시 "콤보 끊김 인지 부족" 피드백 수집 (AC.19) | — |
 
 > **Critical + 5콤보 동시 발생 (E1)**: 두 이벤트 모두 `#FFD700` 사용. **의도적 시각 합산** — "Critical이 5콤보를 건드렸다"는 강화 보상감 (P3 정합). 다크닝 = 전 화면 / ring = 캐릭터 주변 — 공간·형태·시간 프로파일이 모두 달라 합산 인지 자연.
 
 ### 3.2 Pop particle 시스템
+
+**Glass Shard Particle 시각 사양** (art-bible §1.2 Layered Translucency 정합 — frosted glass 깨짐):
+
+| 항목 | 사양 |
+|------|------|
+| Texture canvas | 32×32 px (작게 그릴 때 인지 보장 — 14px 이하는 둥글게 보임) |
+| Vertex 수 | **3-4 vertex만** (sharp 삼각형/사각형). 5+ vertex 거부 — 작게 그릴 때 원형 인지 |
+| Texture 종류 | **4 종류 랜덤** (2 triangle: 등변·sliver + 2 quad: chunky·kite). spawn 시 랜덤 선택 |
+| Layer 1 — frosted base | polygon fill `0xffffff` **alpha 0.45** (반투명 — tint multiply로 풍선 색 반사) |
+| Layer 2 — inner brighter | smaller polygon (scale 0.6) fill `0xffffff` **alpha 0.65** (내부 광택) |
+| Layer 3 — rim stroke | polygon stroke `1.2px` `0xffffff` **alpha 0.95** (sharp white edge) |
+| Layer 4 — specular hot-spot | 작은 원 `radius 1.8px` `0xffffff` **alpha 1.0** (광택점) |
+| Tint | `parent.color` (multiply) — 풍선 색이 반투명 통해 살짝 비침 |
+| Lifetime | 1.2s (linear alpha + scale fade) |
+| Tumbling | 초기 rotation random + angularVel `±8 rad/s` random (구르는 깨진 유리) |
+| Speed | `POP_PARTICLE_SPEED_MIN/MAX 80-200 px/s`, angle random (360° burst) |
+| Cap | 200 동시 활성 (FIFO eviction, §E3) |
+
+> **튜닝 히스토리** (사용자 실기 확인): base alpha 0.30 → 너무 흐림 / 0.60 → 너무 진함 / **0.45 채택** (중간값, 풍선 색 보존 + frosted 느낌 유지)
+
+
 
 ```js
 // Pixi v8 ParticleContainer (성능 — 200개 동시 안전)
@@ -99,27 +120,56 @@ for (const p of activeParticles) {
 
 ### 3.3 Critical 다크닝 시퀀스 (criticalPop:fired)
 
-art-bible §2.1 S3 + §1.3 lock된 0.2s 시퀀스 (audio-director v2 BGM ducking 동기):
+> **(2026-05-31)**: 기존 `bgContainer ColorMatrixFilter.brightness(0.3)` (회색 어둡게) 명세 → **SUPERSEDED**. art-bible §2.1 S3 "Deep Cool Blue" 색조 명세와 불일치하고 bgContainer 외 레이어(balloon, harpoon, ui)가 어두워지지 않아 임팩트 부족했던 것이 교체 이유. Cool Blue Overlay Sprite로 교체. 하기 명세가 현재 구현의 단일 진실.
 
-**ColorMatrixFilter 적용 위치 결정**: `bgContainer.filters` (UI 가독성 보존 — score 표시 다크닝 안 됨). art-bible §2.1 S3 "배경 레이어에 ColorMatrixFilter 적용" 옵션 채택.
+**Cool Blue Overlay Sprite** — vfxContainer (L3) zIndex 9:
+
+- color: `DARKEN_OVERLAY_COLOR = 0x0a1f3a` (deep cool blue — sample HTML §critical-state .sky-bg L222 정합)
+- alpha tween 0 → 0.6 → 0, 5-phase state machine:
 
 ```
-t=0.00s: criticalPop:fired 수신
-t=0.00s: bgContainer.filters = [colorMatrixFilter], brightness 1.0 → 0.3 ramp (0.05s)
-         BGM ducking: gainNode.linearRampToValueAtTime(0.18, ctx.currentTime + 0.05)
-         critical SFX 재생 시작 (GainNode 1.0)
-t=0.05s: 화이트 플래시 overlay (vfxContainer 안 #FFFFFF alpha 0.6, 0.05s 지속)
-t=0.10s: 다크닝 유지 + 골드 림 (#FFD700) **Critical 본체만 outline** (chained 풍선은 frame 0에 removeBalloon으로 이미 제거됨 — outline 적용 불필요)
-         Pop particle (Critical Gold) 본체 위치에서 발현 (POP_PARTICLE_COUNT_CRITICAL = 50)
-t=0.15s: bgContainer ColorMatrixFilter brightness 0.3 → 1.0 ramp (0.05s 복귀)
-         BGM ducking restore: gainNode.linearRampToValueAtTime(0.35, ctx.currentTime + 0.05)
-t=0.20s: 시퀀스 완결. bgContainer.filters = [] 제거. 골드 림 제거. BGM 정상 볼륨
+t=0.00–0.05s  ramp-in   : overlay alpha 0 → 0.6 (linear)
+              BGM ducking: gain 0.35 → 0.18 ramp
+              critical SFX 재생 시작 (GainNode 1.0)
+t=0.05–0.10s  flash     : overlay alpha 0.6 유지 + white flash Sprite(zIndex 10) alpha 0.6→0
+t=0.10–0.15s  hold      : overlay alpha 0.6 유지 + 골드 림(#FFD700) Critical 본체만 outline
+              Pop particle (Critical Gold) 본체 위치 50개 발현
+t=0.15–0.20s  ramp-out  : overlay alpha 0.6 → 0 (linear)
+              BGM ducking restore: gain 0.18 → 0.35 ramp
+t=0.20s       idle      : overlay.visible = false. 시퀀스 완결. BGM 정상 볼륨
 ```
 
-- `ColorMatrixFilter` 사용 (Pixi v8 내장)
-- Tween 패턴: 자체 ticker 누적 + `filter.brightness(value, false)` 매 frame 갱신 (Pixi v8 tween 내장 없음). `false` = absolute (multiply 모드 비활성)
-- 시퀀스 진행 중 추가 criticalPop:fired 발생 시: 현재 시퀀스 즉시 중단 + 새 시퀀스 시작 (overlapping 방지)
-- **Peak frame 부하 최소화**: 다크닝 진입 시점에 ramp 시작값 brightness 0.95로 시작 (immediate 0.3 jump 회피 → frame 분산)
+**구현 사항**:
+- `_darkenOverlay` Sprite: initTextures()에서 1×1 Graphics `fill(0x0a1f3a)` → generateTexture → Sprite width/height = 화면 전체. zIndex 9 (white flash zIndex 10 아래). vfxContainer.addChild.
+- Tween 패턴: 자체 ticker 누적 + `_darkenOverlay.alpha` 매 frame 갱신 (Pixi v8 tween 내장 없음)
+- bgContainer ColorMatrixFilter 방식 **폐기** — cool blue overlay가 vfxContainer 최상위에서 bg + balloon + harpoon + ui 전 layer를 어둡게 표현
+- 시퀀스 진행 중 추가 criticalPop:fired 발생 시: 현재 시퀀스 즉시 중단 + 새 시퀀스 시작 (E2, §E2)
+
+### 3.3-B 캐릭터 화이트-핫 글로우 (criticalPop:fired)
+
+> **(2026-05-31)**: Critical 진입 시 character sprite GlowFilter swap 0.20s. 어두운 배경 위에서 캐릭터 발광이 플레이어 시선을 캐릭터로 집중시키는 Critical 임팩트 cue — art-bible §S3 "캐릭터 silhouette 화이트-핫" + sample HTML B 정합.
+
+**Critical 진입 시 (`_startDarkening()` 호출 시점)**:
+1. `_charOrigFilters = charSprite.filters` 백업
+2. `charSprite.filters = [_charGlowFilter]` swap
+3. `_charGlowTimer = 0.20s` 시작
+
+**GlowFilter 파라미터** (`_charGlowFilter`, 인스턴스 1개 constructor에서 생성):
+```
+GlowFilter({
+  distance:      30,
+  outerStrength: 2.5,
+  innerStrength: 0,
+  color:         0xFFFFFF,   // 화이트-핫
+  quality:       0.5,
+})
+```
+
+**0.20s 후 원상복구** (`_updateDarkening()` timer tail):
+- `charSprite.filters = _charOrigFilters ?? []`
+- `_charOrigFilters = null`
+
+**API contract**: visual-juice `VisualJuiceOptions`에 `getCharacterSprite?: () => Sprite | null` 옵션. GameLoop이 `attachVisualJuice({ ..., getCharacterSprite: () => balloonSystem.getCharacter().sprite })` wiring. 옵션 미전달 시 캐릭터 glow 효과 skip (silent — 다크닝은 정상 진행).
 
 ### 3.4 5콤보 글로우 ring (combo:milestone)
 
@@ -222,11 +272,17 @@ POP_PARTICLE_CAP       = 200 (FIFO 게임 코드 cap)
 
 ### 4.2 다크닝 시퀀스 timing (총합 0.20s — art-bible §1.3 "0.2초 미만" 충족)
 
+> 아래 수식의 제어 대상은 `_darkenOverlay.alpha` (cool blue overlay). 기존 `ColorMatrixFilter.brightness()` 수식 → **SUPERSEDED** (§3.3 교체 사유 참조).
+
 ```
-t=0.00 ~ 0.05s: bgContainer ColorMatrixFilter brightness 1.0 → 0.3 ramp (0.05s)
-t=0.05 ~ 0.10s: 화이트 플래시 overlay (vfxContainer 안 #FFFFFF alpha 0.6 → 0.0 ramp, 0.05s)
-t=0.10 ~ 0.15s: brightness 0.3 유지 + 골드 림 (Critical 본체만) + 50 particle 발현
-t=0.15 ~ 0.20s: brightness 0.3 → 1.0 ramp (0.05s 복귀)
+DARKEN_RAMP_SEC       = 0.05s   (phase 1회 duration)
+DARKEN_OVERLAY_COLOR  = 0x0a1f3a (deep cool blue — art-bible §2.1 S3 정합)
+DARKEN_PEAK_ALPHA     = 0.6
+
+t=0.00 ~ 0.05s  ramp-in : overlay.alpha = 0.6 × (t / 0.05)
+t=0.05 ~ 0.10s  flash   : overlay.alpha = 0.6 (유지) + white flash alpha 0.6→0.0
+t=0.10 ~ 0.15s  hold    : overlay.alpha = 0.6 (유지) + 골드 림 + 50 particle 발현
+t=0.15 ~ 0.20s  ramp-out: overlay.alpha = 0.6 × (1 - (t / 0.05))
 
 BGM ducking timeline:
 t=0.00 ~ 0.05s: gain 0.35 → 0.18 ramp
@@ -289,7 +345,6 @@ SCORE_POPUP_POOL_SIZE   = 20
 - GameLoop — `game:over` listen
 - `systems-index §Engine Bootstrap` — `app.ticker`, `GameLoop.reset/start/end`, Z-layer (vfxContainer L3 + uiContainer L4 + **bgContainer 권한 예외**)
 - `art-bible §1.2` + `§1.3` + `§2.1` + `§3.3` + `§4.2` + `§4.7` — Layered Translucency / Critical hex / S3 시퀀스 / squash & stretch / HERO tier glow / Pixi v8 컬러 구현
-- `production/decisions/2026-05-30-prototype-scope.md` §3 #10 + #13 — Audio + Layered Translucency lock
 
 **Downstream** (emit):
 - (없음 — Visual Juice는 cross-cutting 단말)
@@ -300,7 +355,8 @@ SCORE_POPUP_POOL_SIZE   = 20
 - `assets/audio/LICENSE_REGISTRY.md` — 라이선스 리스트 관리 (SM `DOWNLOAD_GUIDE.md` 패턴, 누락 0건 정책)
 - ring texture: **절차적 생성** (Graphics + `generateTexture()`) — PNG 파일 없음, bundle 영향 0
 
-> **권한 경계**: 본 시스템은 vfxContainer + uiContainer + **bgContainer ColorMatrixFilter 적용 (Critical 다크닝)** + **게임플레이 layer (bgContainer + balloonContainer + harpoonContainer) alpha 변경 (game:over fade — 권한 예외 1건)**. 그 외 entity·container 상태 절대 modify 금지. 다른 시스템 emit으로만 데이터 수신.
+> **권한 경계**: 본 시스템은 vfxContainer + uiContainer + **게임플레이 layer (bgContainer + balloonContainer + harpoonContainer) alpha 변경 (game:over fade — 권한 예외 1건)**. 그 외 entity·container 상태 절대 modify 금지. 다른 시스템 emit으로만 데이터 수신.
+> **bgContainer ColorMatrixFilter 방식 폐기**: 기존 Critical 다크닝 시 bgContainer.filters 변경 권한 → 폐기. cool blue overlay sprite (vfxContainer zIndex 9)가 대신 모든 layer를 어둡게 표현. bgContainer는 이제 game:over alpha fade (권한 예외 1건)만 수정.
 
 ---
 
@@ -321,7 +377,10 @@ SCORE_POPUP_POOL_SIZE   = 20
 | `SCORE_POPUP_FLOAT_SPEED` | 50 px/s | 30–100 | Score popup 위로 부유 속도 |
 | `SCORE_POPUP_LIFETIME` | 0.8 s | 0.5–1.5 | Score popup 지속 |
 | `SCORE_POPUP_POOL_SIZE` | 20 | 15–40 | Pool cap (M1 BitmapText 마이그레이션 비고) |
-| `DARKEN_DURATION` | 0.05 s | 0.03–0.10 | Critical 다크닝 in/out ramp 시간 |
+| `DARKEN_DURATION` | 0.05 s | 0.03–0.10 | Critical 다크닝 in/out ramp 시간 (각 phase) |
+| `DARKEN_OVERLAY_COLOR` | `0x0a1f3a` (deep cool blue) | — | overlay sprite fill color. sample HTML §critical-state 정합 |
+| `DARKEN_OVERLAY_PEAK_ALPHA` | `0.6` | `0.4–0.85` | overlay 피크 alpha. ↑ = 임팩트 ↑, 시각 가독성 ↓ |
+| `CHAR_GLOW_DURATION_SEC` | `0.20` s | `0.10–0.30` | 캐릭터 화이트-핫 GlowFilter swap duration. 다크닝 총 시퀀스(0.20s)와 정합 권장 |
 | `WHITE_FLASH_ALPHA` | 0.6 | 0.4–0.8 | 화이트 플래시 강도 |
 | `BGM_DUCK_GAIN` | 0.18 | 0.10–0.25 | Critical 중 BGM ducking 볼륨 (기본 0.35 → 0.18) |
 | `GAMEOVER_FADE_DURATION` | 0.5 s | 0.3–1.0 | game:over 게임플레이 layer alpha fade |
@@ -333,9 +392,12 @@ SCORE_POPUP_POOL_SIZE   = 20
 | ID | 기준 | 검증 방법 |
 |----|------|---------|
 | AC.1 | balloon:popped 수신 → size별 정확한 파티클 count + (x, y) spawn + 풍선 color 상속 | unit test |
+| **AC.1-Split** | **balloon:split 수신 → parent 위치 (parent.x, parent.y)에 POP_PARTICLE_COUNT[parent.size]개 파티클 burst + parent.color 상속** | unit test |
 | AC.2 | Pop particle lifetime 0.5s 정확 + alpha/scale linear fade | unit test |
 | AC.3 | Pop particle 200개 cap 도달 시 FIFO 제거 (`activeParticles.shift() + pool.release()`) + 신규 발현 정상 (E3) | unit test |
 | AC.4 | criticalPop:fired 수신 → 0.2s 완결 시퀀스 (0.05s ramp in + 0.05s flash + 0.05s 유지 + 0.05s ramp out, 총합 0.20s) | integration test (manual smoke M0, automated M1) |
+| **AC.4-VIS-02** | **criticalPop:fired 수신 → `_darkenOverlay.alpha` 0→0.6→0 정확. 피크 0.6 ±0.05, 총 duration 0.20s ±16ms (1 frame). overlay color = 0x0a1f3a (cool blue). bgContainer.filters 변경 0건 (cmFilter 폐기)** | integration test (manual smoke M0) |
+| **AC.4-VIS-03** | **criticalPop:fired 수신 → `charSprite.filters`에 white GlowFilter (color 0xFFFFFF, outerStrength 2.5, distance 30) swap. 0.20s 후 원본 filters 복구. dragMove/onFire 등 game action 발생해도 timer에 영향 없음** | integration test |
 | AC.5 | criticalPop:fired 진행 중 추가 criticalPop:fired → 현재 시퀀스 중단 + 새 시퀀스 시작 (E2) | unit test |
 | AC.6 | combo:milestone(tier=5) 수신 → ring 0.5s 발현 + combo_tier2 SFX 10ms delay 재생. **`event.tier !== 5` 시 무시** (mn2) | integration test |
 | AC.7 | score:updated 수신 → Score popup at (x, y - 20) spawn + 0.8s float + fade. `+${Math.floor(delta)}` 정수 표시 | unit test |
@@ -374,7 +436,7 @@ SCORE_POPUP_POOL_SIZE   = 20
 
 - [ ] `VisualJuiceSystem.update(dt)` — 파티클·popup·ring·다크닝 ramp 매 frame 갱신
 - [ ] `VisualJuiceSystem.onBalloonPopped(event)` — Pop particle (FIFO cap 관리) + size별 SFX + isCritical=false 시 combo_tier1 SFX
-- [ ] `VisualJuiceSystem.onCriticalPopFired(event)` — 다크닝 시퀀스 (bgContainer) + 화이트 플래시 (vfxContainer overlay) + 골드 림 (Critical 본체만) + 50 particle + critical SFX + BGM ducking
+- [ ] `VisualJuiceSystem.onCriticalPopFired(event)` — **cool blue overlay 다크닝 시퀀스 (_darkenOverlay, vfxContainer zIndex 9)** + **캐릭터 화이트-핫 GlowFilter 0.20s swap (_charGlowTimer)** + 화이트 플래시 (vfxContainer zIndex 10) + 골드 림 (Critical 본체만) + 50 particle + critical SFX + BGM ducking
 - [ ] `VisualJuiceSystem.onBalloonSplit(event)` — 자식 squash/stretch ±5% (별도 SFX 없음)
 - [ ] `VisualJuiceSystem.onScoreUpdated(event)` — Score popup pool.acquire + float
 - [ ] `VisualJuiceSystem.onComboMilestone(event)` — `event.tier !== 5` 시 return + ring spawn + combo_tier2 SFX 10ms delay
@@ -386,25 +448,25 @@ SCORE_POPUP_POOL_SIZE   = 20
 
 ### AC → 테스트 매핑 (Phase D 후 채움)
 
-| AC | Test Method | 파일 |
-|----|-----------|------|
-| AC.1–3 (Pop particle + FIFO) | unit | `tests/unit/vfx-particle.test.js` |
-| AC.4–5 (Critical 다크닝 시퀀스) | integration (manual smoke M0) | `production/qa/evidence/critical-darken-YYYY-MM-DD.md` |
-| AC.6 (5콤보 ring + tier 검사) | integration | `tests/integration/combo-ring.test.js` |
-| AC.7–8 (Score popup) | unit | `tests/unit/score-popup.test.js` |
-| AC.9 (harpoon SFX) | unit | `tests/unit/audio-trigger.test.js` |
-| AC.10 (game over fade + RETRY 동기) | integration | `tests/integration/game-over-vfx.test.js` |
-| AC.11 (combo reset 시각 0) | unit | `tests/unit/vfx-combo-reset.test.js` |
-| AC.12 (Critical + ring 동시) | integration | `tests/integration/vfx-priority.test.js` |
-| AC.13 (Reset + BGM 재시작) | unit | `tests/unit/vfx-reset.test.js` |
-| AC.14 (60fps peak load) | perf (GATE-04) | Playwright + Ticker.deltaMS |
-| AC.15 (Web Audio direct) | code review | grep `@pixi/sound` (0건) |
-| AC.16 (라이선스 누락 0) | manual audit | `assets/audio/LICENSE_REGISTRY.md` |
-| AC.17 (권한 경계) | code review | grep |
-| AC.18 (P2 listener 순서) | code review | grep `attachListeners` 순서 |
-| AC.19 (PG-06 playtest) | playtest 인터뷰 | `production/qa/evidence/feel-YYYY-MM-DD.md` |
-| AC.20 (AudioContext unlock) | unit | `tests/unit/audio-unlock.test.js` |
-| AC.21 (Bundle <600KB) | build report | Vite build analyzer |
+| AC | Test Method |
+|----|-------------|
+| AC.1–3 (Pop particle + FIFO) | unit |
+| AC.4–5 (Critical 다크닝 시퀀스) | integration (manual smoke M0) — evidence 별도 폴더 기록 |
+| AC.6 (5콤보 ring + tier 검사) | integration |
+| AC.7–8 (Score popup) | unit |
+| AC.9 (harpoon SFX) | unit |
+| AC.10 (game over fade + RETRY 동기) | integration |
+| AC.11 (combo reset 시각 0) | unit |
+| AC.12 (Critical + ring 동시) | integration |
+| AC.13 (Reset + BGM 재시작) | unit |
+| AC.14 (60fps peak load) | perf (GATE-04) — Playwright + Ticker.deltaMS |
+| AC.15 (Web Audio direct) | code review — grep `@pixi/sound` (0건) |
+| AC.16 (라이선스 누락 0) | manual audit — LICENSE_REGISTRY.md (assets/audio/ 또는 별도 폴더) |
+| AC.17 (권한 경계) | code review — grep |
+| AC.18 (P2 listener 순서) | code review — grep `attachListeners` 순서 |
+| AC.19 (PG-06 playtest) | playtest 인터뷰 — evidence 별도 폴더 기록 |
+| AC.20 (AudioContext unlock) | unit |
+| AC.21 (Bundle <600KB) | build report — Vite build analyzer |
 
 ### 빌드 검증
 

@@ -310,19 +310,19 @@ trigger 조건: P < 5 AND N >= 5
 
 ### AC → 테스트 매핑 (Phase D 후 채움)
 
-| AC | Test Method | 파일 |
-|----|-----------|------|
-| AC.1–4 (점수·콤보 계산 + Critical chain) | unit | `tests/unit/score-formula.test.js` |
-| AC.5 (frame-guard ID Set) | unit (mock event sequence with IDs) | `tests/unit/score-frame-guard.test.js` |
-| AC.6 (Combo reset 3s) | unit (mock ticker) | `tests/unit/combo-reset.test.js` |
-| AC.7–11 (마일스톤) | unit | `tests/unit/combo-milestone.test.js` |
-| AC.12 (GameLoop reset) | unit | `tests/unit/gameloop-reset.test.js` |
-| AC.13 (Determinism) | unit | `tests/unit/score-determinism.test.js` |
-| AC.14 (Defensive criticalSize) | unit | `tests/unit/score-defensive.test.js` |
-| AC.15 (Payload 정확 — 8필드) | unit | `tests/unit/score-event.test.js` |
-| AC.16 (UI 표시 + 최신 totalScore) | integration (Visual Juice GDD 완성 후 자동화) — M0는 manual smoke | `tests/integration/score-display.test.js` |
-| AC.17 (CRITICAL_COMBO_CAP 동기화) | unit (assert) | `tests/unit/score-cap-sync.test.js` |
-| AC.18 (Read-only API) | unit | `tests/unit/score-readonly-api.test.js` |
+| AC | Test Method |
+|----|-------------|
+| AC.1–4 (점수·콤보 계산 + Critical chain) | unit |
+| AC.5 (frame-guard ID Set) | unit (mock event sequence with IDs) |
+| AC.6 (Combo reset 3s) | unit (mock ticker) |
+| AC.7–11 (마일스톤) | unit |
+| AC.12 (GameLoop reset) | unit |
+| AC.13 (Determinism) | unit |
+| AC.14 (Defensive criticalSize) | unit |
+| AC.15 (Payload 정확 — 8필드) | unit |
+| AC.16 (UI 표시 + 최신 totalScore) | integration (Visual Juice GDD 완성 후 자동화) — M0는 manual smoke |
+| AC.17 (CRITICAL_COMBO_CAP 동기화) | unit (assert) |
+| AC.18 (Read-only API) | unit |
 
 ### 빌드 검증
 

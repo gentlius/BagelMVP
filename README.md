@@ -1,314 +1,192 @@
-Forked from Donchitos/Claude-Code-Game-Studios, evolved into a self-growing studio template
+# POP!
 
-<p align="center">
-  <h1 align="center">Claude Code Game Studios</h1>
-  <p align="center">
-    Turn a single Claude Code session into a full game development studio.
-    <br />
-    49 agents. 73 skills. One coordinated AI team.
-  </p>
-</p>
+> Pang-inspired HTML5 mobile web prototype — modern Neon Glassblowing aesthetic. One-touch drag + double-tap harpoon firing for balloon splitting chaos.
 
-<p align="center">
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT License"></a>
-  <a href=".claude/agents"><img src="https://img.shields.io/badge/agents-49-blueviolet" alt="49 Agents"></a>
-  <a href=".claude/skills"><img src="https://img.shields.io/badge/skills-73-green" alt="73 Skills"></a>
-  <a href=".claude/hooks"><img src="https://img.shields.io/badge/hooks-12-orange" alt="12 Hooks"></a>
-  <a href=".claude/rules"><img src="https://img.shields.io/badge/rules-11-red" alt="11 Rules"></a>
-  <a href="https://docs.anthropic.com/en/docs/claude-code"><img src="https://img.shields.io/badge/built%20for-Claude%20Code-f5f5f5?logo=anthropic" alt="Built for Claude Code"></a>
-  <a href="https://www.buymeacoffee.com/donchitos3"><img src="https://img.shields.io/badge/Buy%20Me%20a%20Coffee-Support%20this%20project-FFDD00?logo=buymeacoffee&logoColor=black" alt="Buy Me a Coffee"></a>
-  <a href="https://github.com/sponsors/Donchitos"><img src="https://img.shields.io/badge/GitHub%20Sponsors-Support%20this%20project-ea4aaa?logo=githubsponsors&logoColor=white" alt="GitHub Sponsors"></a>
-</p>
+## 개요
 
----
+POP!은 한 손가락 입력(드래그 + 더블탭)으로 풍선을 분열시키는 짧은 런 캐주얼 모바일 웹 게임입니다. Pang의 헤리티지(설치형 작살 + 분열 체인)를 현대적 Neon Glassblowing 미학으로 재해석합니다.
 
-## Why This Exists
+**Target Platform**: HTML5 모바일 웹 (iPhone 11 Safari 15+ / Galaxy A52 Chrome 100+)
+**Performance Goal**: 안정적 60 FPS (모바일 기준)
 
-Building a game solo with AI is powerful — but a single chat session has no structure. No one stops you from hardcoding magic numbers, skipping design docs, or writing spaghetti code. There's no QA pass, no design review, no one asking "does this actually fit the game's vision?"
+## 빠른 시작 (Quick Start)
 
-**Claude Code Game Studios** solves this by giving your AI session the structure of a real studio. Instead of one general-purpose assistant, you get 49 specialized agents organized into a studio hierarchy — directors who guard the vision, department leads who own their domains, and specialists who do the hands-on work. Each agent has defined responsibilities, escalation paths, and quality gates.
+### 환경 요구
+- **Node.js** v24 권장 (LTS v20+ OK)
+- **npm** v10+
+- OS: Windows 11 / macOS / Linux
 
-The result: you still make every decision, but now you have a team that asks the right questions, catches mistakes early, and keeps your project organized from first brainstorm to launch.
-
----
-
-## Table of Contents
-
-- [What's Included](#whats-included)
-- [Studio Hierarchy](#studio-hierarchy)
-- [Slash Commands](#slash-commands)
-- [Getting Started](#getting-started)
-- [Upgrading](#upgrading)
-- [Project Structure](#project-structure)
-- [How It Works](#how-it-works)
-- [Design Philosophy](#design-philosophy)
-- [Customization](#customization)
-- [Platform Support](#platform-support)
-- [Community](#community)
-- [Supporting This Project](#supporting-this-project)
-- [License](#license)
-
----
-
-## What's Included
-
-| Category | Count | Description |
-|----------|-------|-------------|
-| **Agents** | 49 | Specialized subagents across design, programming, art, audio, narrative, QA, and production |
-| **Skills** | 73 | Slash commands for every workflow phase (`/start`, `/design-system`, `/create-epics`, `/create-stories`, `/dev-story`, `/story-done`, etc.) |
-| **Hooks** | 12 | Automated validation on commits, pushes, asset changes, session lifecycle, agent audit trail, and gap detection |
-| **Rules** | 11 | Path-scoped coding standards enforced when editing gameplay, engine, AI, UI, network code, and more |
-| **Templates** | 41 | Document templates for GDDs, UX specs, ADRs, sprint plans, HUD design, accessibility, and more |
-
-## Studio Hierarchy
-
-Agents are organized into three tiers, matching how real studios operate:
-
-```
-Tier 1 — Directors (Opus)
-  creative-director    technical-director    producer
-
-Tier 2 — Department Leads (Sonnet)
-  game-designer        lead-programmer       art-director
-  audio-director       narrative-director    qa-lead
-  release-manager      localization-lead
-
-Tier 3 — Specialists (Sonnet/Haiku)
-  gameplay-programmer  engine-programmer     ai-programmer
-  network-programmer   tools-programmer      ui-programmer
-  systems-designer     level-designer        economy-designer
-  technical-artist     sound-designer        writer
-  world-builder        ux-designer           prototyper
-  performance-analyst  devops-engineer       analytics-engineer
-  security-engineer    qa-tester             accessibility-specialist
-  live-ops-designer    community-manager
+### 설치
+```bash
+git clone <repo>
+cd pop-prototype
+npm install
 ```
 
-### Engine Specialists
-
-The template includes agent sets for all three major engines. Use the set that matches your project:
-
-| Engine | Lead Agent | Sub-Specialists |
-|--------|-----------|-----------------|
-| **Godot 4** | `godot-specialist` | GDScript, Shaders, GDExtension |
-| **Unity** | `unity-specialist` | DOTS/ECS, Shaders/VFX, Addressables, UI Toolkit |
-| **Unreal Engine 5** | `unreal-specialist` | GAS, Blueprints, Replication, UMG/CommonUI |
-
-## Slash Commands
-
-Type `/` in Claude Code to access all 73 skills:
-
-**Onboarding & Navigation**
-`/start` `/help` `/project-stage-detect` `/setup-engine` `/adopt`
-
-**Game Design**
-`/brainstorm` `/map-systems` `/design-system` `/quick-design` `/review-all-gdds` `/propagate-design-change`
-
-**Art & Assets**
-`/art-bible` `/asset-spec` `/asset-audit`
-
-**UX & Interface Design**
-`/ux-design` `/ux-review`
-
-**Architecture**
-`/create-architecture` `/architecture-decision` `/architecture-review` `/create-control-manifest`
-
-**Stories & Sprints**
-`/create-epics` `/create-stories` `/dev-story` `/sprint-plan` `/sprint-status` `/story-readiness` `/story-done` `/estimate`
-
-**Reviews & Analysis**
-`/design-review` `/code-review` `/balance-check` `/content-audit` `/scope-check` `/perf-profile` `/tech-debt` `/gate-check` `/consistency-check` `/security-audit`
-
-**QA & Testing**
-`/qa-plan` `/smoke-check` `/soak-test` `/regression-suite` `/test-setup` `/test-helpers` `/test-evidence-review` `/test-flakiness` `/skill-test` `/skill-improve`
-
-**Production**
-`/milestone-review` `/retrospective` `/bug-report` `/bug-triage` `/reverse-document` `/playtest-report`
-
-**Release**
-`/release-checklist` `/launch-checklist` `/changelog` `/patch-notes` `/hotfix` `/day-one-patch`
-
-**Creative & Content**
-`/prototype` `/onboard` `/localize`
-
-**Team Orchestration** (coordinate multiple agents on a single feature)
-`/team-combat` `/team-narrative` `/team-ui` `/team-release` `/team-polish` `/team-audio` `/team-level` `/team-live-ops` `/team-qa`
-
-## Getting Started
-
-### Prerequisites
-
-- [Git](https://git-scm.com/)
-- [Claude Code](https://docs.anthropic.com/en/docs/claude-code) (`npm install -g @anthropic-ai/claude-code`)
-- **Recommended**: [jq](https://jqlang.github.io/jq/) (for hook validation) and Python 3 (for JSON validation)
-
-All hooks fail gracefully if optional tools are missing — nothing breaks, you just lose validation.
-
-### Setup
-
-1. **Clone or use as template**:
-   ```bash
-   git clone https://github.com/Donchitos/Claude-Code-Game-Studios.git my-game
-   cd my-game
-   ```
-
-2. **Open Claude Code** and start a session:
-   ```bash
-   claude
-   ```
-
-3. **Run `/start`** — the system asks where you are (no idea, vague concept,
-   clear design, existing work) and guides you to the right workflow. No assumptions.
-
-   Or jump directly to a specific skill if you already know what you need:
-   - `/brainstorm` — explore game ideas from scratch
-   - `/setup-engine godot 4.6` — configure your engine if you already know
-   - `/project-stage-detect` — analyze an existing project
-
-## Upgrading
-
-Already using an older version of this template? See [UPGRADING.md](UPGRADING.md)
-for step-by-step migration instructions, a breakdown of what changed between
-versions, and which files are safe to overwrite vs. which need a manual merge.
-
-## Project Structure
-
+### 개발 서버
+```bash
+npm run dev
 ```
-CLAUDE.md                           # Master configuration
-.claude/
-  settings.json                     # Hooks, permissions, safety rules
-  agents/                           # 49 agent definitions (markdown + YAML frontmatter)
-  skills/                           # 73 slash commands (subdirectory per skill)
-  hooks/                            # 12 hook scripts (bash, cross-platform)
-  rules/                            # 11 path-scoped coding standards
-  statusline.sh                     # Status line script (context%, model, stage, epic breadcrumb)
-  docs/
-    workflow-catalog.yaml           # 7-phase pipeline definition (read by /help)
-    templates/                      # 41 document templates
-src/                                # Game source code
-assets/                             # Art, audio, VFX, shaders, data files
-design/                             # GDDs, narrative docs, level designs
-docs/                               # Technical documentation and ADRs
-tests/                              # Test suites (unit, integration, performance, playtest)
-tools/                              # Build and pipeline tools
-prototypes/                         # Throwaway prototypes (isolated from src/)
-production/                         # Sprint plans, milestones, release tracking
+→ http://localhost:5173
+
+### 프로덕션 빌드 & 미리보기
+```bash
+npm run build
+npm run preview
+```
+→ http://localhost:4173
+
+### 테스트
+```bash
+npm run test       # Vitest unit + integration
+npm run test:e2e   # Playwright e2e (Pixel 5 모바일 viewport)
+npm run typecheck  # TypeScript strict
 ```
 
-## How It Works
+## 환경 이슈 해결
 
-### Agent Coordination
+### SSL 인터셉트 환경 (Corporate Proxy / Zscaler)
 
-Agents follow a structured delegation model:
+`UNABLE_TO_VERIFY_LEAF_SIGNATURE` 오류 시:
 
-1. **Vertical delegation** — directors delegate to leads, leads delegate to specialists
-2. **Horizontal consultation** — same-tier agents can consult each other but can't make binding cross-domain decisions
-3. **Conflict resolution** — disagreements escalate up to the shared parent (`creative-director` for design, `technical-director` for technical)
-4. **Change propagation** — cross-department changes are coordinated by `producer`
-5. **Domain boundaries** — agents don't modify files outside their domain without explicit delegation
+**Windows PowerShell (임시)**:
+```powershell
+$env:NODE_OPTIONS = "--use-system-ca"
+npm install
+```
 
-### Collaborative, Not Autonomous
+**Windows PowerShell (영구)**:
+```powershell
+setx NODE_OPTIONS "--use-system-ca"
+```
 
-This is **not** an auto-pilot system. Every agent follows a strict collaboration protocol:
+**macOS / Linux**:
+```bash
+export NODE_OPTIONS="--use-system-ca"
+npm install
+```
 
-1. **Ask** — agents ask questions before proposing solutions
-2. **Present options** — agents show 2-4 options with pros/cons
-3. **You decide** — the user always makes the call
-4. **Draft** — agents show work before finalizing
-5. **Approve** — nothing gets written without your sign-off
+Node.js v24+는 OS Trust Store(Windows Cert Store, macOS Keychain, Linux ca-certificates)를 자동으로 사용합니다.
 
-You stay in control. The agents provide structure and expertise, not autonomy.
+### Windows PowerShell ExecutionPolicy
 
-### Automated Safety
+`npm.ps1 cannot be loaded` 오류 시:
 
-**Hooks** run automatically on every session:
+**Option 1**: `.cmd` 변형 사용
+```powershell
+npm.cmd install
+npx.cmd vite
+```
 
-| Hook | Trigger | What It Does |
-|------|---------|--------------|
-| `validate-commit.sh` | PreToolUse (Bash) | Checks for hardcoded values, TODO format, JSON validity, design doc sections — exits early if the command is not `git commit` |
-| `validate-push.sh` | PreToolUse (Bash) | Warns on pushes to protected branches — exits early if the command is not `git push` |
-| `validate-assets.sh` | PostToolUse (Write/Edit) | Validates naming conventions and JSON structure — exits early if the file is not in `assets/` |
-| `session-start.sh` | Session open | Shows current branch and recent commits for orientation |
-| `detect-gaps.sh` | Session open | Detects fresh projects (suggests `/start`) and missing design docs when code or prototypes exist |
-| `pre-compact.sh` | Before compaction | Preserves session progress notes |
-| `post-compact.sh` | After compaction | Reminds Claude to restore session state from `active.md` |
-| `notify.sh` | Notification event | Shows Windows toast notification via PowerShell |
-| `session-stop.sh` | Session close | Archives `active.md` to session log and records git activity |
-| `log-agent.sh` | Agent spawned | Audit trail start — logs subagent invocation |
-| `log-agent-stop.sh` | Agent stops | Audit trail stop — completes subagent record |
-| `validate-skill-change.sh` | PostToolUse (Write/Edit) | Advises running `/skill-test` after any `.claude/skills/` change |
+**Option 2**: ExecutionPolicy 변경
+```powershell
+Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+```
 
-> **Note**: `validate-commit.sh`, `validate-assets.sh`, and `validate-skill-change.sh` fire on every Bash/Write tool call and exit immediately (exit 0) when the command or file path is not relevant. This is normal hook behavior — not a performance concern.
+## 프로젝트 구조
 
-**Permission rules** in `settings.json` auto-allow safe operations (git status, test runs) and block dangerous ones (force push, `rm -rf`, reading `.env` files).
+```
+design/                     — 게임 디자인 문서 (외부 제출 영역)
+  gdd/                      — 5 시스템 GDD + game-concept + systems-index
+  art/                      — art-bible + canonical sample HTML
+  ux/                       — HUD/About modal UX spec
 
-### Path-Scoped Rules
+src/                        — 게임 소스 코드
+  systems/                  — 5 시스템 (Input + Balloon Physics & Split + 
+                              Critical Pop + Score & Combo + Visual Juice)
+  vfx/                      — VFX + procedural sprites + background
+  ui/                       — HUD + About modal
+  audio/                    — AudioManager + SFX synth (Web Audio)
+  events/                   — EventBus singleton
+  conventions/              — RNG wrapper + UI strings
+  entities/                 — Balloon, Character, Harpoon interfaces
 
-Coding standards are automatically enforced based on file location:
+tests/                      — Vitest unit/integration + Playwright e2e
 
-| Path | Enforces |
-|------|----------|
-| `src/gameplay/**` | Data-driven values, delta time usage, no UI references |
-| `src/core/**` | Zero allocations in hot paths, thread safety, API stability |
-| `src/ai/**` | Performance budgets, debuggability, data-driven parameters |
-| `src/networking/**` | Server-authoritative, versioned messages, security |
-| `src/ui/**` | No game state ownership, localization-ready, accessibility |
-| `design/gdd/**` | Required 8 sections, formula format, edge cases |
-| `tests/**` | Test naming, coverage requirements, fixture patterns |
-| `prototypes/**` | Relaxed standards, README required, hypothesis documented |
+public/audio/bgm/           — BGM OGG 자산 (CC0)
 
-## Design Philosophy
+playwright.config.ts        — E2E 설정 (Pixel 5 portrait 모바일 뷰포트)
+vite.config.ts              — 빌드 설정 + 번들 분석
+tsconfig.json               — TypeScript strict
+```
 
-This template is grounded in professional game development practices:
+## 기술 스택
 
-- **MDA Framework** — Mechanics, Dynamics, Aesthetics analysis for game design
-- **Self-Determination Theory** — Autonomy, Competence, Relatedness for player motivation
-- **Flow State Design** — Challenge-skill balance for player engagement
-- **Bartle Player Types** — Audience targeting and validation
-- **Verification-Driven Development** — Tests first, then implementation
+| 컴포넌트 | 버전 | 용도 |
+|---------|------|------|
+| **Pixi.js** | ^8.0.0 | WebGL2 렌더러 |
+| **pixi-filters** | ^6.0.0 | GlowFilter (Neon 글로우) |
+| **Vite** | ^5.0.0 | 빌드 + dev server |
+| **TypeScript** | ^5.0.0 | Strict 타입 체크 |
+| **Vitest** | ^1.0.0 | Unit + integration 테스트 |
+| **Playwright** | ^1.40.0 | E2E 자동화 (Chromium 모바일) |
+| **Node.js** | v24 / v20 LTS | 런타임 |
 
-## Customization
+**주의**: `@pixi/filter-glow` (v5/v6용 구버전)는 Pixi v8 호환 안 됨. `pixi-filters` 패키지 사용.
 
-This is a **template**, not a locked framework. Everything is meant to be customized:
+## BGM 다운로드 & 변환 (CC0)
 
-- **Add/remove agents** — delete agent files you don't need, add new ones for your domains
-- **Edit agent prompts** — tune agent behavior, add project-specific knowledge
-- **Modify skills** — adjust workflows to match your team's process
-- **Add rules** — create new path-scoped rules for your project's directory structure
-- **Tune hooks** — adjust validation strictness, add new checks
-- **Pick your engine** — use the Godot, Unity, or Unreal agent set (or none)
-- **Set review intensity** — `full` (all director gates), `lean` (phase gates only), or `solo` (none). Set during `/start` or edit `production/review-mode.txt`. Override per-run with `--review solo` on any skill.
+기본 BGM은 별도 자산입니다. [freesound.org/s/684184/](https://freesound.org/s/684184/) ("Some Game Background Music Or Something" by Seth_Makes_Sounds, CC0)에서 다운로드 가능합니다.
 
-## Platform Support
+### FFmpeg 설치
 
-Primary development and testing on **Windows 10** with Git Bash. All hooks use POSIX-compatible patterns (`grep -E`, not `grep -P`) and include fallbacks for missing tools, so they should run on macOS and Linux. The `notify.sh` hook uses PowerShell for Windows toast notifications and is a no-op elsewhere — desktop notifications on macOS/Linux are not yet wired. Cross-platform testing is ongoing; please file issues for any platform-specific breakage.
+**Windows (winget)**:
+```powershell
+winget install --id Gyan.FFmpeg --source winget --accept-package-agreements --accept-source-agreements --silent
+```
 
-## Community
+### WAV → OGG q6 변환
 
-- **Discussions** — [GitHub Discussions](https://github.com/Donchitos/Claude-Code-Game-Studios/discussions) for questions, ideas, and showcasing what you've built
-- **Issues** — [Bug reports and feature requests](https://github.com/Donchitos/Claude-Code-Game-Studios/issues)
+```bash
+ffmpeg -y -i "path/to/684184__seth_makes_sounds__some-game-background-music-or-something.wav" \
+  -c:a libvorbis -q:a 6 public/audio/bgm/primary.ogg
+```
+
+**결과**: 34.5 MB WAV → 3.28 MB OGG (89% 감소)
+
+### Audacity 대안
+- File → Import → WAV
+- File → Export → OGG Vorbis (Quality: 6)
+- 저장: `public/audio/bgm/primary.ogg`
+
+### BGM 없이 실행
+`primary.ogg` 누락 시에도 게임 정상 작동합니다 (silent fallback, console.warn 1회). 게임 로직 영향 0.
+
+## 라이선스
+
+- **코드**: (사용자 결정)
+- **BGM**: CC0 Public Domain (Seth_Makes_Sounds) — `assets/audio/LICENSE_REGISTRY.md` 참조
+- **기타 자산**: 모두 procedural (Web Audio synthesis + Pixi Graphics)
+
+## 빌드 검증 (Build Gates 5/5)
+
+| Gate | 기준 | 검증 방법 |
+|------|------|---------|
+| GATE-01 | `npm run build` exit 0 | CI build job |
+| GATE-02 | Preview HTTP 200 응답 | Playwright 테스트 |
+| GATE-03 | Console error 0 (60초, Pixel 5) | E2E 자동 수집 |
+| GATE-04 | FPS P50 ≥58 / P99 ≥55 | Playwright RAF timing |
+| GATE-05 | Bundle < 600 KB | CI bundle-size job |
+
+**자동화**: `.github/workflows/ci.yml` 4-job 파이프라인 (build / unit / e2e / bundle-size)
+
+## 디자인 문서 읽기 순서
+
+외부 개발자 또는 AI agent 권장 순서:
+
+1. **`design/gdd/game-concept.md`** — 게임 비전 + 4개 Pillars
+2. **`design/gdd/systems-index.md`** — 시스템 분류 + §Engine Bootstrap + §Conventions + Wiring 의무사항
+3. **`design/art/art-bible.md`** + **`design/art/samples/01-character-balloon-sky.html`** — 시각 정체성 (canonical sample이 단일 진실)
+4. **Input System** → **Balloon Physics & Split** → **Critical Pop** → **Score & Combo** → **Visual Juice** (각 `design/gdd/[system].md`)
+5. **`design/ux/hud.md`** + **`design/ux/about-modal.md`** — UI/UX 레이아웃
+
+## 알려진 한계
+
+- **iOS Safari**: Playwright Pixel 5 desktop emulation은 Chromium 기반. 정확한 iOS 호환 검증은 실기 테스트 필수
+- **BGM**: 라이선스 보존 이유로 git에 미포함. `primary.ogg` 별도 설정 필요
+- **Backup BGM**: 선택 사항. Primary 단독으로 작동
+- **Gamepad**: MVP 미지원 (터치/마우스 전용)
 
 ---
 
-## Supporting This Project
-
-Claude Code Game Studios is free and open source. If it saves you time or helps you ship your game, consider supporting continued development:
-
-<p>
-  <a href="https://www.buymeacoffee.com/donchitos3"><img src="https://img.shields.io/badge/Buy%20Me%20a%20Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black" alt="Buy Me a Coffee"></a>
-  &nbsp;
-  <a href="https://github.com/sponsors/Donchitos"><img src="https://img.shields.io/badge/GitHub%20Sponsors-ea4aaa?style=for-the-badge&logo=githubsponsors&logoColor=white" alt="GitHub Sponsors"></a>
-</p>
-
-- **[Buy Me a Coffee](https://www.buymeacoffee.com/donchitos3)** — one-time support
-- **[GitHub Sponsors](https://github.com/sponsors/Donchitos)** — recurring support through GitHub
-
-Sponsorships help fund time spent maintaining skills, adding new agents, keeping up with Claude Code and engine API changes, and responding to community issues.
-
----
-
-*Built for Claude Code. Maintained and extended — contributions welcome via [GitHub Discussions](https://github.com/Donchitos/Claude-Code-Game-Studios/discussions).*
-
-## License
-
-MIT License. See [LICENSE](LICENSE) for details.
+**Last Updated**: 2026-05-31
