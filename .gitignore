@@ -44,6 +44,7 @@ coverage/
 playwright-report/
 test-results/
 dist/stats.html
+bundle-stats.html
 
 # C++ build artifacts — not committed
 *.obj

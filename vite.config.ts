@@ -24,7 +24,8 @@ export default defineConfig({
   plugins: [
     visualizer({
       open: false,
-      filename: 'dist/stats.html',
+      // 프로젝트 루트로 배출 — dist/ 외부 → (1) bundle-size CI 측정에서 자연스러운 제외 (2) GitHub Pages 라이브에 분석 산출물 노출 방지
+      filename: 'bundle-stats.html',
       title: 'POP! Bundle Analysis',
     }),
   ],
