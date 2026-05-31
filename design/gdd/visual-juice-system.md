@@ -129,13 +129,13 @@ for (const p of activeParticles) {
 
 ```
 t=0.00–0.05s  ramp-in   : overlay alpha 0 → 0.6 (linear)
-              BGM ducking: gain 0.35 → 0.18 ramp
+              BGM ducking: gain 0.55 → 0.28 ramp
               critical SFX 재생 시작 (GainNode 1.0)
 t=0.05–0.10s  flash     : overlay alpha 0.6 유지 + white flash Sprite(zIndex 10) alpha 0.6→0
 t=0.10–0.15s  hold      : overlay alpha 0.6 유지 + 골드 림(#FFD700) Critical 본체만 outline
               Pop particle (Critical Gold) 본체 위치 50개 발현
 t=0.15–0.20s  ramp-out  : overlay alpha 0.6 → 0 (linear)
-              BGM ducking restore: gain 0.18 → 0.35 ramp
+              BGM ducking restore: gain 0.28 → 0.55 ramp
 t=0.20s       idle      : overlay.visible = false. 시퀀스 완결. BGM 정상 볼륨
 ```
 
@@ -285,8 +285,8 @@ t=0.10 ~ 0.15s  hold    : overlay.alpha = 0.6 (유지) + 골드 림 + 50 particl
 t=0.15 ~ 0.20s  ramp-out: overlay.alpha = 0.6 × (1 - (t / 0.05))
 
 BGM ducking timeline:
-t=0.00 ~ 0.05s: gain 0.35 → 0.18 ramp
-t=0.15 ~ 0.20s: gain 0.18 → 0.35 ramp
+t=0.00 ~ 0.05s: gain 0.55 → 0.28 ramp
+t=0.15 ~ 0.20s: gain 0.28 → 0.55 ramp
 ```
 
 ### 4.3 5콤보 ring
@@ -382,7 +382,7 @@ SCORE_POPUP_POOL_SIZE   = 20
 | `DARKEN_OVERLAY_PEAK_ALPHA` | `0.6` | `0.4–0.85` | overlay 피크 alpha. ↑ = 임팩트 ↑, 시각 가독성 ↓ |
 | `CHAR_GLOW_DURATION_SEC` | `0.20` s | `0.10–0.30` | 캐릭터 화이트-핫 GlowFilter swap duration. 다크닝 총 시퀀스(0.20s)와 정합 권장 |
 | `WHITE_FLASH_ALPHA` | 0.6 | 0.4–0.8 | 화이트 플래시 강도 |
-| `BGM_DUCK_GAIN` | 0.18 | 0.10–0.25 | Critical 중 BGM ducking 볼륨 (기본 0.35 → 0.18) |
+| `BGM_DUCK_GAIN` | 0.28 | 0.15–0.40 | Critical 중 BGM ducking 볼륨 (기본 0.55 → 0.28, 약 -6dB 폭 유지) |
 | `GAMEOVER_FADE_DURATION` | 0.5 s | 0.3–1.0 | game:over 게임플레이 layer alpha fade |
 
 ---
@@ -510,7 +510,7 @@ SCORE_POPUP_POOL_SIZE   = 20
 
 | 채널 | GainNode | 피크 | 비고 |
 |------|---------|------|------|
-| BGM | 0.35 | -9 dBFS | Critical 중 ducking → 0.18 (0.1s) |
+| BGM | 0.55 | -5 dBFS | Critical 중 ducking → 0.28 (-11 dBFS, 약 -6dB 폭) (0.1s) |
 | SFX 일반 | 0.7 | -3 dBFS | 게임플레이 피드백 주채널 |
 | Critical SFX | 1.0 | 0 dBFS | BGM ducking 동반 |
 | Game Over SFX | 0.8 | -2 dBFS | BGM fade-out 0.3s 동반 |
@@ -523,7 +523,7 @@ SCORE_POPUP_POOL_SIZE   = 20
 // audio-manager.js (단일 모듈)
 const ctx = new AudioContext()           // 초기 state: 'suspended' (브라우저 autoplay 정책)
 const buffers = new Map()
-const bgmGain = ctx.createGain(); bgmGain.gain.value = 0.35; bgmGain.connect(ctx.destination)
+const bgmGain = ctx.createGain(); bgmGain.gain.value = 0.55; bgmGain.connect(ctx.destination)
 const sfxGain = ctx.createGain(); sfxGain.gain.value = 1.0;  sfxGain.connect(ctx.destination)
 let bgmNode = null
 
@@ -541,8 +541,8 @@ function play(sfxId, volume = 1.0, delayMs = 0) {
 }
 
 function duck(duration = 0.1) {
-  bgmGain.gain.linearRampToValueAtTime(0.18, ctx.currentTime + 0.05)
-  bgmGain.gain.linearRampToValueAtTime(0.35, ctx.currentTime + 0.05 + duration)
+  bgmGain.gain.linearRampToValueAtTime(0.28, ctx.currentTime + 0.05)
+  bgmGain.gain.linearRampToValueAtTime(0.55, ctx.currentTime + 0.05 + duration)
 }
 
 function bgmStart(trackId) {

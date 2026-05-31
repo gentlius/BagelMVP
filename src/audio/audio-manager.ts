@@ -38,8 +38,8 @@ export type SoundId =
 // ---------------------------------------------------------------------------
 
 const MASTER_VOLUME = 0.7;   // 모바일 web 권장
-const BGM_GAIN = 0.35;       // BGM 기본 볼륨 (-9 dBFS)
-const BGM_DUCK_GAIN = 0.18;  // Critical 중 BGM ducking (-9 dBFS → -15 dBFS, GDD §4.2)
+const BGM_GAIN = 0.55;       // BGM 기본 볼륨 (-5 dBFS) — D-P6-BGM-04 사용자 피드백 +4dB
+const BGM_DUCK_GAIN = 0.28;  // Critical 중 BGM ducking (-5 dBFS → -11 dBFS, 약 -6dB 폭 유지, GDD §4.2)
 const SFX_GAIN = 1.0;        // SFX bus gain (per-call volume이 세부 조정)
 
 // Per-SFX volume — visual-juice §Audio Note Mix 표
@@ -230,7 +230,7 @@ export class AudioManager {
   /**
    * Critical 중 BGM ducking.
    * visual-juice §4.2 타임라인: 0.05s ramp 다운 → (durationSec − 0.05)s 유지 → 0.05s ramp 업.
-   * GDD 정확 값: BGM_GAIN 0.35 → BGM_DUCK_GAIN 0.18 → 0.35.
+   * GDD 정확 값: BGM_GAIN 0.55 → BGM_DUCK_GAIN 0.28 → 0.55.
    *
    * @param durationSec  - 총 ducking 지속 (GDD: 0.1s ramp in + hold + 0.05s ramp out ≈ 0.2s 총합)
    * @param _attenuation - dBFS 값 (reserved, 실제 gain은 BGM_DUCK_GAIN 상수 사용)

@@ -183,12 +183,12 @@ describe('AudioManager', () => {
 
       expect(bgmGain.gain.cancelScheduledValues).toHaveBeenCalled();
       expect(bgmGain.gain.linearRampToValueAtTime).toHaveBeenCalledTimes(3);
-      // 두 번째 호출: BGM_DUCK_GAIN (0.18)
-      expect(bgmGain.gain.linearRampToValueAtTime.mock.calls[0][0]).toBeCloseTo(0.18);
-      // 마지막 호출: BGM_GAIN 복귀 (0.35)
+      // 두 번째 호출: BGM_DUCK_GAIN (0.28)
+      expect(bgmGain.gain.linearRampToValueAtTime.mock.calls[0][0]).toBeCloseTo(0.28);
+      // 마지막 호출: BGM_GAIN 복귀 (0.55)
       expect(
         bgmGain.gain.linearRampToValueAtTime.mock.calls[2][0],
-      ).toBeCloseTo(0.35);
+      ).toBeCloseTo(0.55);
     });
   });
 
