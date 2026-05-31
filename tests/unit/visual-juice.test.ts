@@ -106,8 +106,8 @@ describe('Particle alpha/scale linear fade formula (AC.2)', () => {
     expect(alpha).toBeLessThanOrEqual(0.01);
   });
 
-  it('lifetime = 0.5s (AC.2)', () => {
-    expect(POP_PARTICLE_LIFETIME).toBe(0.5);
+  it('lifetime = 1.2s (AC.2)', () => {
+    expect(POP_PARTICLE_LIFETIME).toBe(1.2);
   });
 
   it('cap = 200 (§7)', () => {

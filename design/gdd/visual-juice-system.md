@@ -260,7 +260,7 @@ update(dt) {
 POP_PARTICLE_COUNT = { Large: 30, Medium: 20, Small: 10, CriticalBody: 50 }
 POP_PARTICLE_SPEED_MIN = 80 px/s
 POP_PARTICLE_SPEED_MAX = 200 px/s
-POP_PARTICLE_LIFETIME  = 0.5 s
+POP_PARTICLE_LIFETIME  = 1.2 s
 POP_PARTICLE_CAP       = 200 (FIFO 게임 코드 cap)
 
 매 frame:
@@ -369,7 +369,7 @@ SCORE_POPUP_POOL_SIZE   = 20
 | `POP_PARTICLE_COUNT.Small` | 10 | 5–20 | Small balloon pop 파티클 수 |
 | `POP_PARTICLE_COUNT.CriticalBody` | 50 | 30–80 | Critical balloon 본체 파티클 수 |
 | `POP_PARTICLE_SPEED_MIN/MAX` | 80–200 px/s | 60–300 | 파티클 분산 속도 |
-| `POP_PARTICLE_LIFETIME` | 0.5 s | 0.3–1.0 | 파티클 지속 |
+| `POP_PARTICLE_LIFETIME` | 1.2 s | 0.5–2.0 | 파티클 지속 (Glass Shard 가시성 — §Glass Shard Particle 시각 사양 정합) |
 | `POP_PARTICLE_CAP` | 200 | 150–300 | FIFO 게임 코드 cap (ParticleContainer maxSize와 동일) |
 | `RING_RADIUS_START` | character.width × 1.5 | 1.2–2.0 | 5콤보 ring 시작 반경 |
 | `RING_RADIUS_END` | character.width × 2.5 | 2.0–3.5 | 5콤보 ring 종료 반경 |
@@ -393,7 +393,7 @@ SCORE_POPUP_POOL_SIZE   = 20
 |----|------|---------|
 | AC.1 | balloon:popped 수신 → size별 정확한 파티클 count + (x, y) spawn + 풍선 color 상속 | unit test |
 | **AC.1-Split** | **balloon:split 수신 → parent 위치 (parent.x, parent.y)에 POP_PARTICLE_COUNT[parent.size]개 파티클 burst + parent.color 상속** | unit test |
-| AC.2 | Pop particle lifetime 0.5s 정확 + alpha/scale linear fade | unit test |
+| AC.2 | Pop particle lifetime 1.2s 정확 + alpha/scale linear fade | unit test |
 | AC.3 | Pop particle 200개 cap 도달 시 FIFO 제거 (`activeParticles.shift() + pool.release()`) + 신규 발현 정상 (E3) | unit test |
 | AC.4 | criticalPop:fired 수신 → 0.2s 완결 시퀀스 (0.05s ramp in + 0.05s flash + 0.05s 유지 + 0.05s ramp out, 총합 0.20s) | integration test (manual smoke M0, automated M1) |
 | **AC.4-VIS-02** | **criticalPop:fired 수신 → `_darkenOverlay.alpha` 0→0.6→0 정확. 피크 0.6 ±0.05, 총 duration 0.20s ±16ms (1 frame). overlay color = 0x0a1f3a (cool blue). bgContainer.filters 변경 0건 (cmFilter 폐기)** | integration test (manual smoke M0) |
