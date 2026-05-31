@@ -1,7 +1,7 @@
 # Input System
 
 > **Status**: Designed (pending /design-review)
-> **Author**: joywoni + Claude (game-designer, ux-designer assist)
+> **Author**: gentlius + Claude (game-designer, ux-designer assist)
 > **Last Updated**: 2026-05-30
 > **Implements Pillar**: P1 — 한 손가락, 한 번에 한 결정
 > **Handoff target**: Other AI agent (spec-heavy, prose-minimal style)

@@ -1,7 +1,7 @@
 # Score & Combo System
 
 > **Status**: Draft (M0 prototype 1-pager, post-review v1.1)
-> **Author**: joywoni + Claude
+> **Author**: gentlius + Claude
 > **Last Updated**: 2026-05-30 (정밀 리뷰 14건 반영 — BLOCKING 1 + MAJOR 5 + MINOR 7 + 신규 AC.17 + 양방향 lock 2건)
 > **Implements Pillar**: P2 (화면이 점수보다 먼저 말한다) — Visual Juice listener 선등록으로 시각 응답 우선 보장 / P3 (운은 자주, 실력은 깊게) — Critical × Combo 시너지
 > **Engine target**: Pixi.js v8

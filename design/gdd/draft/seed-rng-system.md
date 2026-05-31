@@ -1,7 +1,7 @@
 # Seed / RNG System
 
 > **Status**: Designed (pending /design-review)
-> **Author**: joywoni + Claude
+> **Author**: gentlius + Claude
 > **Specialists consulted (lean mode 확장 검토)**:
 > - `systems-designer` (algorithm 결정 + §C/D): Mulberry32 선택 + 시드 파생 + Date.now() seed
 > - `qa-lead` (Section H AC): AC-05 fixed seed (flaky fix), AC-06 Bonferroni 보정, AC-07 라벨 정정, +3 신규 AC (sub-stream independence, chi-square, degenerate seeds), +AC-18 MVP 베타 검증, smoke subset에 AC-03 추가

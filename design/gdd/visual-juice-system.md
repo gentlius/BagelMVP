@@ -1,7 +1,7 @@
 # Visual Juice System
 
 > **Status**: Draft (M0 prototype 1-pager, post-review v1.1)
-> **Author**: joywoni + Claude (audio-director 협업)
+> **Author**: gentlius + Claude (audio-director 협업)
 > **Last Updated**: 2026-05-31
 > **Implements Pillar**: P2 (화면이 점수보다 먼저 말한다) — Visual·Audio 응답이 게임 상태 인지 주채널 / P3 (운은 자주, 실력은 깊게) — Critical 다크닝 + 5콤보 ring으로 극대 시각 보상
 > **Engine target**: Pixi.js v8 + Web Audio API

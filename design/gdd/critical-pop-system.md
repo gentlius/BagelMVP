@@ -1,7 +1,7 @@
 # Critical Pop System
 
 > **Status**: Draft (M0 prototype 1-pager, post-review v1.1)
-> **Author**: joywoni + Claude
+> **Author**: gentlius + Claude
 > **Last Updated**: 2026-05-30 (정밀 리뷰 19건 반영 — BLOCKING 3 / MAJOR 7 / MINOR 7 + balloon-physics-split 양방향 lock 2건)
 > **Implements Pillar**: P3 (운은 자주, 실력은 깊게)
 > **Engine target**: Pixi.js v8

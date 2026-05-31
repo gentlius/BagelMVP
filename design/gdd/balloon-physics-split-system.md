@@ -1,7 +1,7 @@
 # Balloon Physics & Split System
 
 > **Status**: Draft (M0 prototype 1-pager, post-review v1.1)
-> **Author**: joywoni + Claude
+> **Author**: gentlius + Claude
 > **Last Updated**: 2026-05-30 (정밀 리뷰 13건 반영)
 > **Implements Pillar**: P2 (화면이 점수보다 먼저 말한다) + P3 (운은 자주 실력은 깊게)
 > **Engine target**: Pixi.js v8

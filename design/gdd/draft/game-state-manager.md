@@ -1,7 +1,7 @@
 # Game State Manager
 
 > **Status**: Designed (pending /design-review)
-> **Author**: joywoni + Claude
+> **Author**: gentlius + Claude
 > **Specialists consulted (lean mode 확장 검토)**:
 > - `systems-designer` (Section A-C holistic): 4 CRITICAL + 5 HIGH + 6 MEDIUM + 3 LOW 반영
 > - `qa-lead` (Section H AC): AC-12·14·18·19·22·23 재작성 + 4개 lifecycle edge ACs 추가 (총 31 ACs)
