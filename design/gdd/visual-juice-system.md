@@ -130,7 +130,7 @@ for (const p of activeParticles) {
 ```
 t=0.00–0.05s  ramp-in   : overlay alpha 0 → 0.6 (linear)
               BGM ducking: gain 0.55 → 0.28 ramp
-              critical SFX 재생 시작 (GainNode 1.0)
+              critical SFX 재생 시작 (GainNode 0.6 — D-P6-AUDIO-FIX-02)
 t=0.05–0.10s  flash     : overlay alpha 0.6 유지 + white flash Sprite(zIndex 10) alpha 0.6→0
 t=0.10–0.15s  hold      : overlay alpha 0.6 유지 + 골드 림(#FFD700) Critical 본체만 outline
               Pop particle (Critical Gold) 본체 위치 50개 발현
@@ -512,8 +512,8 @@ SCORE_POPUP_POOL_SIZE   = 20
 | 채널 | GainNode | 피크 | 비고 |
 |------|---------|------|------|
 | BGM | 0.55 | -5 dBFS | Critical 중 ducking → 0.28 (-11 dBFS, 약 -6dB 폭) (0.1s) |
-| SFX 일반 | 0.7 | -3 dBFS | 게임플레이 피드백 주채널 |
-| Critical SFX | 1.0 | 0 dBFS | BGM ducking 동반 |
+| SFX 일반 | 0.5~0.7 | -6 ~ -3 dBFS | 게임플레이 피드백 주채널. harpoon/balloon-pop-large = 0.5, balloon-pop-small = 0.55, combo = 0.6~0.7 (D-P6-AUDIO-FIX-02 사용자 피드백: transient hot 직접 감쇠) |
+| Critical SFX | 0.6 | -4.4 dBFS | BGM ducking 동반. 1.0 → 0.6 감쇠 (D-P6-AUDIO-FIX-02): 3-layer composite로 인한 인지 hot 보정 |
 | Game Over SFX | 0.8 | -2 dBFS | BGM fade-out 0.3s 동반 |
 
 크기별 차등: Large/Medium balloon_pop_large = 0.7 / Small balloon_pop_small = 0.55.

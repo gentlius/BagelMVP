@@ -43,11 +43,13 @@ const BGM_DUCK_GAIN = 0.28;  // Critical 중 BGM ducking (-5 dBFS → -11 dBFS, 
 const SFX_GAIN = 0.5;        // SFX bus gain (-6 dBFS) — D-P6-AUDIO-FIX: SFX transient 인지 hot 보정 (BGM이 SFX critical보다 약간 우위가 되도록)
 
 // Per-SFX volume — visual-juice §Audio Note Mix 표
+// D-P6-AUDIO-FIX-02 (사용자 피드백): SFX bus 감쇠(-6dB)만으로는 transient 인지 변화 부족 →
+// per-SFX 직접 감쇠로 hot peak 모양 자체를 누름. critical-pop 3-layer composite + harpoon/balloon-large 빈번.
 const SFX_VOLUME: Record<SoundId, number> = {
-  'harpoon-fire':       0.7,
+  'harpoon-fire':       0.5,  // 0.7 → 0.5 (-2.9dB) — 발사 시 매번 발생
   'balloon-pop-small':  0.55,
-  'balloon-pop-large':  0.7,
-  'critical-pop':       1.0,  // Critical SFX: 0 dBFS
+  'balloon-pop-large':  0.5,  // 0.7 → 0.5 (-2.9dB) — 자주 발생 SFX
+  'critical-pop':       0.6,  // 1.0 → 0.6 (-4.4dB) — 3-layer composite hot 직접 감쇠 (이전 Critical SFX 0 dBFS → -4.4 dBFS)
   'combo-up-1':         0.6,
   'combo-up-2':         0.65,
   'combo-up-3':         0.7,
