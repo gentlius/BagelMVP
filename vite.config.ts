@@ -1,8 +1,10 @@
 import { defineConfig } from 'vite';
 import { visualizer } from 'rollup-plugin-visualizer';
 
+// GitHub Pages subpath: /BagelMVP/ — local dev은 '/' 그대로
+// CI에서 VITE_BASE_PATH=/BagelMVP/ env로 override
 export default defineConfig({
-  base: '/',
+  base: process.env.VITE_BASE_PATH ?? '/',
   server: {
     host: true,
   },

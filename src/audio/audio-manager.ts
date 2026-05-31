@@ -315,7 +315,8 @@ export class AudioManager {
     // freesound.org/s/684184/ — "Some Game Background Music or Something" by Seth_Makes_Sounds
     // WAV 34.5MB → ffmpeg OGG q6 변환 3.28MB. public/audio/bgm/primary.ogg (Vite static serve).
     eventBus.on('game:start', () => {
-      void this.bgmStart('/audio/bgm/primary.ogg');
+      // base path 자동 적용 (local '/'와 GitHub Pages '/BagelMVP/' 둘 다 정합)
+      void this.bgmStart(`${import.meta.env.BASE_URL}audio/bgm/primary.ogg`);
     });
 
     // input:fire → harpoon-fire SFX
