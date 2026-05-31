@@ -9,7 +9,7 @@
 
 | Slot | Track ID | Source | Author | License | Local Path | LUFS | Notes |
 |------|----------|--------|--------|---------|------------|------|-------|
-| **Primary** ✅ | [#684184](https://freesound.org/s/684184/) | freesound.org | Seth_Makes_Sounds | **CC0** (Public Domain — 사용자 확인 2026-05-31) | `public/audio/bgm/primary.ogg` | TBD (Audacity 정규화 미적용 — 게임 master gain으로 조정) | "Some Game Background Music Or Something" — 2:16 loop. WAV 34.5MB → ffmpeg OGG q6 3.28MB (D-P6-BGM-01) |
+| **Primary** ✅ | [#684184](https://freesound.org/s/684184/) | freesound.org | Seth_Makes_Sounds | **CC0** (Public Domain — 사용자 확인 2026-05-31) | `public/audio/bgm/primary.ogg` | **-16 LUFS** (input_i ffmpeg loudnorm 측정) | "Some Game Background Music Or Something". 원본 2:16 → trim 15.5s~128s (인트로 -22 LUFS quiet 제거 + outro 8s silence 제거) + 0.3s fade-in/out + dynaudnorm p=0.7 m=3 (LRA 9.10→1.60). 결과 1:52.5s 2.85MB. 원본 백업: `assets/audio/bgm-originals/primary.ogg` (vite static 대상 외 — dist 미포함) (D-P6-BGM-03, 2026-05-31) |
 | **Backup A** | TBD | TBD (freesound.org) | TBD | CC0 / CC-BY 4.0 | `assets/audio/bgm/backup-a.ogg` | -16 | Primary 거부 시 fallback 후보 1 |
 | **Backup B** | TBD | TBD (freesound.org) | TBD | CC0 / CC-BY 4.0 | `assets/audio/bgm/backup-b.ogg` | -16 | Primary 거부 시 fallback 후보 2 |
 
