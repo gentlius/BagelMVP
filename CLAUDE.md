@@ -1,19 +1,21 @@
 # Claude Code Game Studios -- Game Studio Agent Architecture
 
-Indie game development managed through 49 coordinated Claude Code subagents.
+Indie game development managed through 54 coordinated Claude Code subagents.
 Each agent owns a specific domain, enforcing separation of concerns and quality.
 
 ## Technology Stack
 
-- **Engine**: [CHOOSE: Godot 4 / Unity / Unreal Engine 5]
-- **Language**: [CHOOSE: GDScript / C# / C++ / Blueprint]
+- **Engine**: HTML5 / PixiJS 8.0+
+- **Language**: TypeScript 5.x
 - **Version Control**: Git with trunk-based development
-- **Build System**: [SPECIFY after choosing engine]
-- **Asset Pipeline**: [SPECIFY after choosing engine]
+- **Build System**: Vite 5 (current pin — may upgrade to 7/8 later)
+- **Test Framework**: Vitest (unit) + Playwright (e2e / browser)
+- **Asset Pipeline**: TexturePacker (spritesheets) + Vite asset handling + ffmpeg (audio)
+- **Target Runtime**: Modern evergreen browsers, iOS Safari 16+, Android Chrome 110+
+- **Deployment**: itch.io / GitHub Pages / Cloudflare Pages
 
-> **Note**: Engine-specialist agents exist for Godot, Unity, and Unreal with
-> dedicated sub-specialists. Run `/setup-engine` to pin the engine and unblock
-> the matching specialist set.
+> **Note**: Engine-specialist agents exist for Godot, Unity, Unreal, and HTML5/PixiJS
+> with dedicated sub-specialists.
 
 ## Project Structure
 
@@ -21,9 +23,7 @@ Each agent owns a specific domain, enforcing separation of concerns and quality.
 
 ## Engine Version Reference
 
-<!-- `/setup-engine` activates this @include with the chosen engine's VERSION.md.
-     Available: docs/engine-reference/{godot,unity,unreal}/VERSION.md -->
-<!-- @docs/engine-reference/godot/VERSION.md -->
+@docs/engine-reference/html5/VERSION.md
 
 ## Technical Preferences
 

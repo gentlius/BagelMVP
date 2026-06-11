@@ -490,7 +490,7 @@ export class VisualJuiceSystem {
         this._charGlowTimer = 0;
         const charSprite = this._getCharacterSprite?.();
         if (charSprite) {
-          charSprite.filters = this._charOrigFilters ?? [];
+          charSprite.filters = this._charOrigFilters ?? null;
         }
         this._charOrigFilters = null;
       }

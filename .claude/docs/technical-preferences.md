@@ -1,6 +1,8 @@
 # Technical Preferences
 
-<!-- Manually pinned 2026-05-29 (template /setup-engine does not support HTML5/JS stack). -->
+<!-- Initial pin 2026-05-29 (manual, before template HTML5 support landed). -->
+<!-- Updated 2026-06-11: CCGS template now supports HTML5/PixiJS via /setup-engine html5. -->
+<!-- Engine Specialists section rewritten to use new HTML5 specialist set. -->
 <!-- All agents reference this file for project-specific standards and conventions. -->
 
 ## Engine & Language
@@ -85,27 +87,39 @@
 
 ## Engine Specialists
 
-> **주의**: 템플릿에 Pixi.js / HTML5 전문 specialist agent **없음**. 범용 agent (gameplay-programmer, ui-programmer, technical-artist)가 Pixi v8 idiom을 stretch. GDD에 Pixi 패턴을 명시적으로 적어두면 agent 마찰 최소화.
+> **업데이트 2026-06-11**: CCGS 템플릿에 HTML5/PixiJS 전용 specialist agent 5종이 추가되어
+> stretch-범용 라우팅(gameplay-programmer + technical-artist + ui-programmer)을 폐기하고
+> 전용 라우팅으로 전환. ADR-0001 (Engine Specialist Separation Policy) 적용 — TypeScript
+> 코드 품질은 `pixijs-specialist`에 흡수 (단일 언어 정책).
 
-- **Primary**: gameplay-programmer (Pixi v8 idioms 가정)
-- **Language/Code Specialist**: gameplay-programmer (JavaScript/ES2023)
-- **Shader Specialist**: technical-artist (Pixi v8 Filter pipeline + WebGL2 셰이더)
-- **UI Specialist**: ui-programmer (Pixi v8 Container + HTML overlay 혼용 패턴)
-- **Additional Specialists**:
-  - performance-analyst (모바일 web 60fps 검증)
-  - audio-director / sound-designer (Web Audio API 또는 @pixi/sound)
+- **Primary**: html5-specialist (브라우저 API, 플랫폼 아키텍처, 모바일 웹 perf)
+- **Framework Specialist**: pixijs-specialist (PixiJS 8.x — scene graph, Assets, Filters, Ticker, ParticleContainer, Federated events; TypeScript 코드 품질도 함께 소유)
+- **Shader Specialist**: webgl-shader-specialist (커스텀 GLSL Filter, WebGL2/WebGPU dual-target)
+- **Build Specialist**: web-build-specialist (Vite config, 번들 최적화, asset pipeline, PWA, CI/CD)
+- **E2E Test Specialist**: playwright-e2e-specialist (브라우저 e2e, 모바일 device emulation, viewport/touch 시뮬, screenshot regression)
+- **Additional Specialists** (engine-agnostic):
+  - performance-analyst (모바일 web 60fps 검증, 메모리 프로파일링)
+  - audio-director / sound-designer (Web Audio API, Howler.js, @pixi/sound 결정)
 - **Routing Notes**:
-  - Pixi 특화 질문 시 gameplay-programmer에게 "Pixi.js v8 ESM API 기준으로 답해달라" 명시
-  - WebGL/셰이더는 technical-artist
-  - 사운드 시스템은 audio-director가 Web Audio vs @pixi/sound 결정 권한
+  - PixiJS API를 사용하는 `.ts` / `.js` 파일 → `pixijs-specialist`
+  - 브라우저 API (Storage, fetch, Workers), 플랫폼 결정 (PWA, Capacitor) → `html5-specialist`
+  - 커스텀 GLSL Filter 작성 → `webgl-shader-specialist` (Filter wrapper는 `pixijs-specialist`)
+  - `vite.config.ts` / `tsconfig.json` / `package.json` 스크립트 → `web-build-specialist`
+  - `tests/e2e/*.spec.ts` Playwright e2e → `playwright-e2e-specialist`
+  - 일반 architecture review → `html5-specialist`
 
 ### File Extension Routing
 
 | File Extension / Type | Specialist to Spawn |
 |-----------------------|---------------------|
-| `.js` / `.ts` (게임 로직) | gameplay-programmer |
-| `.frag` / `.vert` (셰이더) | technical-artist |
-| `.html` / `.css` (HTML 오버레이 UI) | ui-programmer |
-| `.json` (asset manifest, config) | gameplay-programmer (or tools-programmer for pipelines) |
-| `vite.config.js` / `package.json` | devops-engineer |
-| General architecture review | technical-director + gameplay-programmer 협업 |
+| Game code (`.ts`, `.js` using PixiJS) | pixijs-specialist |
+| Platform / browser API code (`.ts` / `.js`, no Pixi) | html5-specialist |
+| Custom shader files (`.glsl`, `.wgsl`, `.vert`, `.frag`, `.vs`, `.fs`) | webgl-shader-specialist |
+| Build config (`vite.config.*`, `tsconfig.json`, `package.json` scripts) | web-build-specialist |
+| E2E test files (`tests/e2e/**/*.spec.ts`) | playwright-e2e-specialist |
+| Unit test files (`tests/unit/**/*.test.ts`) | pixijs-specialist or gameplay-programmer |
+| HTML entry (`index.html`) | html5-specialist |
+| PWA manifest (`public/manifest.json`) | web-build-specialist |
+| CI workflows (`.github/workflows/*.yml`) | web-build-specialist |
+| Stylesheets (`.css` — minimal in canvas-based games) | html5-specialist |
+| General architecture review | html5-specialist |

@@ -128,8 +128,40 @@ export class BalloonPhysicsSplitSystem {
   private _dragStartX: number | null = null;  // null = not dragging
   private _characterVx = 0;                    // px/s — applied in update()
 
-  // Shared GlowFilter instances (§3.1) — deferred to Phase 3 technical-artist
-  // Phase 2: null (filters applied via tint only — visual-juice is Phase 3)
+  // Shared GlowFilter instances (§3.1).
+  // D-P6-PERF-01: GlowFilter는 stateless (uniform만) — sprite 간 공유 안전.
+  // 매 spawn마다 new GlowFilter() 회피로 framebuffer + GC churn 제거.
+  private readonly _harpoonGlowFilter: GlowFilter = new GlowFilter({
+    distance: 10,
+    outerStrength: 1.2,
+    innerStrength: 0,
+    color: HARPOON_TINT,
+    quality: 0.3,
+  });
+  // Critical hero glow (gold 고정 — D-P6-CRIT-VIS-01)
+  private readonly _criticalGlowFilter: GlowFilter = new GlowFilter({
+    distance: 28,
+    outerStrength: 2.0,
+    innerStrength: 0,
+    color: 0xFFD700,
+    quality: 0.5,
+  });
+  // Supporting balloon glow — color별 lazy cache (6색 max). D-P6-GLOW-01.
+  private readonly _supportingGlowFilters: Map<BalloonColorId, GlowFilter> = new Map();
+  private _getSupportingGlowFilter(colorId: BalloonColorId): GlowFilter {
+    let f = this._supportingGlowFilters.get(colorId);
+    if (!f) {
+      f = new GlowFilter({
+        distance: 12,
+        outerStrength: 0.8,
+        innerStrength: 0,
+        color: BALLOON_PALETTE[colorId].glow,
+        quality: 0.3, // 모바일 perf (R-SD-04)
+      });
+      this._supportingGlowFilters.set(colorId, f);
+    }
+    return f;
+  }
 
   constructor(options: BalloonPhysicsOptions) {
     this._app = options.app;
@@ -356,13 +388,8 @@ export class BalloonPhysicsSplitSystem {
     b.sprite.width = diameter * 1.1;
     b.sprite.height = diameter * 1.1;
     // 3. Hero GlowFilter — outerStrength 2.0 (supporting 0.8의 2.5×), color gold
-    b.sprite.filters = [new GlowFilter({
-      distance: 28,
-      outerStrength: 2.0,
-      innerStrength: 0,
-      color: 0xFFD700,
-      quality: 0.5,
-    })];
+    // D-P6-PERF-01: shared instance (_criticalGlowFilter)
+    b.sprite.filters = [this._criticalGlowFilter];
   }
 
   // ---------------------------------------------------------------------------
@@ -663,15 +690,10 @@ export class BalloonPhysicsSplitSystem {
     sprite.width = diameter;
     sprite.height = diameter;
     sprite.anchor.set(0.5, 0.5);
-    // D-P6-GLOW-01: art-bible §4.2 supporting glow 적용 — Neon Glassblowing 미학.
-    // Critical 풍선은 visual-juice가 hero glow로 swap (별도 시스템).
-    sprite.filters = [new GlowFilter({
-      distance: 12,
-      outerStrength: 0.8,
-      innerStrength: 0,
-      color: BALLOON_PALETTE[colorId].glow,
-      quality: 0.3, // 모바일 perf (R-SD-04)
-    })];
+    // D-P6-GLOW-01: art-bible §4.2 supporting glow — Neon Glassblowing 미학.
+    // Critical 풍선은 applyCriticalVisual에서 hero glow로 swap.
+    // D-P6-PERF-01: color별 shared instance (lazy cache, 6색 max)
+    sprite.filters = [this._getSupportingGlowFilter(colorId)];
     sprite.x = x;
     sprite.y = y;
 
@@ -699,13 +721,8 @@ export class BalloonPhysicsSplitSystem {
     sprite.height = 0; // 시작 0, _updateHarpoon에서 자람
     sprite.anchor.set(0.5, 1.0);
     sprite.tint = HARPOON_TINT;
-    sprite.filters = [new GlowFilter({
-      distance: 10,
-      outerStrength: 1.2,
-      innerStrength: 0,
-      color: HARPOON_TINT,
-      quality: 0.3,
-    })];
+    // D-P6-PERF-01: shared instance (멤버 _harpoonGlowFilter) — 발사마다 GC 회피
+    sprite.filters = [this._harpoonGlowFilter];
     sprite.x = x;
     sprite.y = bottomY;
     this._harpoonContainer.addChild(sprite);

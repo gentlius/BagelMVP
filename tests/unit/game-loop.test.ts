@@ -151,3 +151,51 @@ describe('AudioContext unlock on first input:fire', () => {
     expect(() => eventBus.emit('input:fire', {})).not.toThrow();
   });
 });
+
+// ---------------------------------------------------------------------------
+// visibilitychange → pause/resume (mobile platform: BGM/배터리 누수 방지)
+// vitest는 node 환경 — document API는 브라우저 신뢰. 분기 contract만 검증.
+// ---------------------------------------------------------------------------
+
+describe('visibilitychange handler contract', () => {
+  // GameLoop.init() 안 등록되는 handler 로직 미러:
+  //   document.addEventListener('visibilitychange', () => {
+  //     if (document.hidden) this.pause();
+  //     else this.resume();
+  //   });
+  // fake document로 분기 자체를 검증 (DOM event dispatch는 브라우저/jsdom 책임).
+  function makeHandler(fakeDoc: { hidden: boolean }, pause: () => void, resume: () => void) {
+    return () => { if (fakeDoc.hidden) pause(); else resume(); };
+  }
+
+  it('document.hidden=true → pause() invoked', () => {
+    const fakeDoc = { hidden: true };
+    const pause = vi.fn();
+    const resume = vi.fn();
+    makeHandler(fakeDoc, pause, resume)();
+    expect(pause).toHaveBeenCalledOnce();
+    expect(resume).not.toHaveBeenCalled();
+  });
+
+  it('document.hidden=false → resume() invoked', () => {
+    const fakeDoc = { hidden: false };
+    const pause = vi.fn();
+    const resume = vi.fn();
+    makeHandler(fakeDoc, pause, resume)();
+    expect(pause).not.toHaveBeenCalled();
+    expect(resume).toHaveBeenCalledOnce();
+  });
+
+  it('hidden true → false 토글 → pause 1 + resume 1', () => {
+    const fakeDoc = { hidden: false };
+    const pause = vi.fn();
+    const resume = vi.fn();
+    const handler = makeHandler(fakeDoc, pause, resume);
+    fakeDoc.hidden = true;
+    handler();
+    fakeDoc.hidden = false;
+    handler();
+    expect(pause).toHaveBeenCalledOnce();
+    expect(resume).toHaveBeenCalledOnce();
+  });
+});

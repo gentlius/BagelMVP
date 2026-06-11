@@ -108,6 +108,12 @@ bootstrap()
     });
 
     gameLoop.start();
+
+    // e2e smoke test 검증 hook — title hang regression 감지
+    // (playwright smoke spec: page.waitForFunction(() => window.__GAME__?.isStarted()))
+    (globalThis as unknown as { __GAME__: { isStarted: () => boolean } }).__GAME__ = {
+      isStarted: () => gameLoop.isStarted(),
+    };
   })
   .catch((err) => {
     // D-06: DOM fallback — no process.exit() in browser context

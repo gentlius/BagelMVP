@@ -2,7 +2,7 @@
  * POP! e2e smoke test — Build Gates GATE-02 / GATE-03 / GATE-04 / GATE-05
  *
  * Runs against: vite preview http://localhost:4173
- * Viewport: iPhone 12 (390×844, deviceScaleFactor=3) — from playwright.config.ts
+ * Viewport: Pixel 5 (393×851, deviceScaleFactor=2.75) — from playwright.config.ts
  *
  * Gate coverage:
  *   GATE-02 — HTTP 200 on page.goto('/')
@@ -89,6 +89,15 @@ test('GATE-02/03/04: 60s mobile session — HTTP 200 + 0 console.error + FPS', a
 
   // Wait for Pixi canvas to mount (app canvas injected into #game)
   await page.waitForSelector('#game canvas', { timeout: 10_000 });
+
+  // Scene-entry assertion — title hang regression 감지.
+  // bootstrap → gameLoop.start() → game:start emit → __GAME__.isStarted() true.
+  // 없으면 60초 무한 탭 세션이 silent title hang에서도 모든 GATE 통과해버림.
+  await page.waitForFunction(
+    () => (window as unknown as { __GAME__?: { isStarted: () => boolean } }).__GAME__?.isStarted() === true,
+    null,
+    { timeout: 15_000 }
+  );
 
   // ---------------------------------------------------------------------------
   // GATE-04: RAF frame timing — inject measurement script

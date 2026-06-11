@@ -147,6 +147,13 @@ export class GameLoop {
       am?.unlock?.();
     });
 
+    // Mobile platform: tab background → pause (BGM 누수 + 배터리 드레인 방지).
+    // pause()/resume()는 About 모달과 동일 경로 — _paused guard로 중복 safe.
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) this.pause();
+      else this.resume();
+    });
+
     // Ticker: single update handler
     this._app.ticker.add((ticker: Ticker) => this.update(ticker));
   }
@@ -204,6 +211,8 @@ export class GameLoop {
     am?.resume?.();
   }
   isPaused(): boolean { return this._paused; }
+  /** e2e smoke test 진입 검증용 — game:start emit 후 true */
+  isStarted(): boolean { return this._started; }
 
   /**
    * Per-frame update. Called by Pixi Ticker.
