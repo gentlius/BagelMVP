@@ -47,7 +47,10 @@ export const SIZE_RATIO: Record<string, number> = {
 export const SMALL_HARPOON_HITBOX_EXTRA = 6;
 
 export const GRAVITY = 400; // px/s²
-export const BOUNCE_RESTITUTION = 0.85;
+export const BOUNCE_RESTITUTION = 0.85; // 벽·바닥 반사 탄성
+// D-P6-BBCOL-01 (사용자 2026-06-24): balloon-balloon 짐볼 탄성 충돌 (§3.10).
+// 질량비례(mass ∝ r²) + 탄탄한 바운스. 큰 버블이 작은 버블을 밀어내고 작은 버블이 강하게 튕김.
+export const BALLOON_COLLISION_RESTITUTION = 0.9;
 export const SPLIT_VEL_X = 120; // px/s
 export const SPLIT_VEL_Y = 250; // px/s
 export const HARPOON_GROWTH_SPEED = 800; // px/s — Pang 원작 ~ (사용자 D-P6-SPD-01: 2400 → 800, ~0.8s에 천장 도달)
@@ -94,6 +97,109 @@ export function nextBalloonId(): string {
 }
 export function resetIdCounter(): void {
   _idCounter = 0;
+}
+
+// ---------------------------------------------------------------------------
+// Pure physics: balloon-balloon elastic collision (D-P6-BBCOL-01, §3.10/§4.4)
+// ---------------------------------------------------------------------------
+
+/** Minimal mutable body view — BalloonEntity satisfies this. */
+export interface CollisionBody {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+}
+
+/**
+ * Resolve a single balloon-balloon elastic collision pair **in place**.
+ *
+ * Impulse-based circle-circle, mass ∝ radius² (짐볼 질량비례). Performs
+ * inverse-mass-weighted positional separation (lighter body moves more) and,
+ * if the bodies are approaching (vrn > 0), a normal-impulse velocity exchange
+ * with the given restitution. Bodies already separating get separation only.
+ *
+ * @returns true if the bodies were overlapping (and thus mutated), false otherwise.
+ *
+ * Edge cases (§3.10): non-overlapping → no-op; identical position (distSq=0,
+ * E10) → no-op (normal undefined, guards 0-division).
+ */
+export function resolveBalloonPair(
+  a: CollisionBody,
+  ra: number,
+  b: CollisionBody,
+  rb: number,
+  restitution: number,
+): boolean {
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const distSq = dx * dx + dy * dy;
+  const sumR = ra + rb;
+
+  if (distSq >= sumR * sumR) return false; // broad-phase: no overlap
+  if (distSq === 0) return false;          // E10: identical position — normal undefined
+
+  const dist = Math.sqrt(distSq);
+  const nx = dx / dist; // unit normal a→b
+  const ny = dy / dist;
+
+  const invA = 1 / (ra * ra); // mass ∝ radius² → invMass = 1/r²
+  const invB = 1 / (rb * rb);
+  const invSum = invA + invB;
+
+  // (1) positional separation — inverse-mass weighted (lighter pushed more)
+  const overlap = sumR - dist;
+  a.x -= nx * overlap * (invA / invSum);
+  a.y -= ny * overlap * (invA / invSum);
+  b.x += nx * overlap * (invB / invSum);
+  b.y += ny * overlap * (invB / invSum);
+
+  // (2) velocity exchange — impulse only when approaching (vrn > 0)
+  const vrn = (a.vx - b.vx) * nx + (a.vy - b.vy) * ny;
+  if (vrn > 0) {
+    const jImp = -(1 + restitution) * vrn / invSum;
+    a.vx += jImp * invA * nx;
+    a.vy += jImp * invA * ny;
+    b.vx -= jImp * invB * nx;
+    b.vy -= jImp * invB * ny;
+  }
+
+  return true;
+}
+
+/**
+ * Resolve all balloon-balloon collisions for one frame (O(n²/2) pairs).
+ *
+ * Skips any balloon with `spawnImmunityRadius > 0` (E9 — split siblings spawn
+ * overlapped at the parent position; immunity prevents an explosive separation
+ * until they drift apart). Per-pair math delegates to {@link resolveBalloonPair};
+ * `onPairResolved` fires for each overlapping pair (used for sprite sync).
+ *
+ * Single pass — no relaxation iteration (§3.10). Deterministic: fixed array
+ * iteration order, no RNG (AC.10 preserved).
+ */
+export function resolveBalloonCollisions<
+  T extends CollisionBody & { spawnImmunityRadius: number },
+>(
+  balloons: readonly T[],
+  radiusOf: (b: T) => number,
+  restitution: number,
+  onPairResolved?: (a: T, b: T) => void,
+): void {
+  const n = balloons.length;
+  for (let i = 0; i < n; i++) {
+    const a = balloons[i];
+    if (a.spawnImmunityRadius > 0) continue; // E9
+    const ra = radiusOf(a);
+    for (let j = i + 1; j < n; j++) {
+      const b = balloons[j];
+      if (b.spawnImmunityRadius > 0) continue; // E9
+      const rb = radiusOf(b);
+      if (resolveBalloonPair(a, ra, b, rb, restitution)) {
+        onPairResolved?.(a, b);
+      }
+    }
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -240,8 +346,27 @@ export class BalloonPhysicsSplitSystem {
     this._updateHarpoon(dt);
     if (!this._character.isDying) {
       this._checkCollisions();
+      this._resolveBalloonCollisions(); // D-P6-BBCOL-01: 짐볼 탄성 충돌 (§3.10)
       this._updateSpawnTimer(dt);
     }
+  }
+
+  // D-P6-BBCOL-01: balloon-balloon 짐볼 탄성 충돌 (§3.10).
+  // 순회 + 충돌 수학은 순수 함수 resolveBalloonCollisions()에 위임 (단위 테스트 가능).
+  // 본 메서드는 radius 접근 + 충돌 쌍 sprite 동기화 콜백만 제공.
+  private _resolveBalloonCollisions(): void {
+    resolveBalloonCollisions(
+      this._activeBalloons,
+      (b) => this._balloonRadius(b),
+      BALLOON_COLLISION_RESTITUTION,
+      (a, b) => {
+        // sprite 동기화 — motion 단계 sync 이후 nudge 발생
+        a.sprite.x = a.x;
+        a.sprite.y = a.y;
+        b.sprite.x = b.x;
+        b.sprite.y = b.y;
+      },
+    );
   }
 
   // D-P6-CTRL-01: virtual stick. D-P6-DEATH-01: dying mode 분기.
