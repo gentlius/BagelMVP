@@ -2,7 +2,7 @@
 
 > **Status**: Draft (M0 prototype 1-pager, post-review v1.1)
 > **Author**: gentlius + Claude
-> **Last Updated**: 2026-06-24 (D-P6-BBCOL-01: balloon-balloon 짐볼 탄성 충돌 추가 — §3.10, §4.4, E9/E10, AC.26–30)
+> **Last Updated**: 2026-06-24 (D-P6-BBCOL-03: balloon-balloon 충돌 = 속력 보존 바운스 — 방향은 바뀌되 각 풍선 |v| 불변. §3.10, §4.4, E9/E10, AC.26–30)
 > **Implements Pillar**: P2 (화면이 점수보다 먼저 말한다) + P3 (운은 자주 실력은 깊게)
 > **Engine target**: Pixi.js v8
 > **Scope note**: M0 prototype 범위 1-pager. character + harpoon entity 흡수, difficulty-spawn 인라인 (decisions §2.2). 9섹션 헤더 유지하되 본문 압축. M1 PROCEED 후 정식 GDD 승격 (m1-pre-production.md §retrofit).
@@ -210,39 +210,48 @@ if (this._spawnTimer >= SPAWN_INTERVAL) {
 - **Small 풍선 hitbox 확장 (art-bible §3.3)**: balloon-harpoon 충돌 시 Small 풍선 충돌 반경 = `visual radius + 6px` (touch target 보장). **character·balloon-balloon 충돌은 미적용** (게임플레이 난이도 + 물리 정합성 보존 — 시각 반경으로만 충돌)
 - character 반경 = `CHARACTER_HITBOX_RADIUS` (§7)
 
-### 3.10 Balloon-Balloon 짐볼 탄성 충돌 (D-P6-BBCOL-01)
+### 3.10 Balloon-Balloon 속력 보존 바운스 (D-P6-BBCOL-03)
 
-> **설계 변경 (2026-06-24, 치프)**: 이전 1-pager는 성능 근거로 balloon-balloon 충돌을 의도적 제외했다 (버블끼리 관통). 짐볼끼리 부딪히는 물리감이 부재해 체감이 빈약 → **impulse 기반 원-원 탄성 충돌**을 추가한다. 물리 성격: **질량비례(mass ∝ 면적) + 탄탄한 바운스(restitution 0.9)** — 큰 버블이 작은 버블을 밀어내고, 작은 버블은 강하게 튕겨나간다.
+> **설계 이력**:
+> - **D-P6-BBCOL-01 (2026-06-24)**: 성능 근거로 제외돼 있던 balloon-balloon 충돌 추가 (impulse 기반 탄성, restitution 0.9). → 속도 *크기*가 변함.
+> - **D-P6-BBCOL-02 (2026-06-24)**: 속도를 아예 안 바꾸는 "겹침 분리만"으로 정정. → bounce가 사라져 폐기.
+> - **D-P6-BBCOL-03 (2026-06-24, 치프)**: 최종. **충돌하면 방향 벡터는 바뀌되(=튕긴다), 각 풍선의 속도 *크기* `|v|` 는 충돌로 변하지 않는다.** 표준 탄성 충돌로 새 *방향*을 구한 뒤 각 풍선 속도를 충돌 전 속력으로 **재정규화**한다. 질량비례(mass ∝ 면적)는 새 방향 계산에 사용 — 큰 풍선은 거의 안 꺾이고(직진), 작은 풍선이 크게 튕긴다.
 
 **매 frame `_resolveBalloonCollisions()`** (motion + character/harpoon collision 갱신 후, spawn timer 전):
 
 모든 풍선 쌍 (i, j), i < j 에 대해:
 
-1. **상호충돌 면제 (E9)**: `i 또는 j 의 spawnImmunityRadius > 0` 이면 skip. 분열 직후 형제 풍선은 부모 위치에서 겹친 채 생성되므로(거리 0), immunity 동안 상호충돌을 막아 폭발적 분리를 방지한다. immunity는 character로부터 75px 벗어나면 해제(E7)되며, 그 시점엔 SPLIT_VEL로 이미 분리 완료.
+1. **상호분리 면제 (E9)**: `i 또는 j 의 spawnImmunityRadius > 0` 이면 skip. 분열 직후 형제 풍선은 부모 위치에서 겹친 채 생성되므로(거리 0), immunity 동안 분리/바운스를 막아 시각 점프를 방지한다. immunity는 character로부터 75px 벗어나면 해제(E7)되며, 그 시점엔 SPLIT_VEL로 이미 분리 완료.
 
-2. **detection** (broad-phase): `dx = xj-xi, dy = yj-yi`, `distSq = dx²+dy²`, `sumR = ri+rj`. `distSq ≥ sumR²` → skip. `distSq == 0` (완전 동일 위치) → skip (법선 계산 불가 — immunity가 통상 차단하나 안전 가드).
+2. **detection** (broad-phase): `dx = xj-xi, dy = yj-yi`, `distSq = dx²+dy²`, `sumR = ri+rj`. `distSq ≥ sumR²` → skip (겹침 없음). `distSq == 0` (완전 동일 위치) → skip (법선 계산 불가 — immunity가 통상 차단하나 안전 가드, E10).
 
-3. **positional separation** (겹침 제거, inverse-mass 가중): `dist = √distSq`, `overlap = sumR - dist`, 법선 `n = (dx, dy)/dist`. 가벼운 쪽이 더 많이 밀림:
+3. **positional separation** (겹침 제거, inverse-mass 가중): `dist = √distSq`, `overlap = sumR - dist`, 법선 `n = (dx, dy)/dist`. 가벼운(작은) 쪽이 더 많이 밀림:
    ```
-   w_i = invMass_i / (invMass_i + invMass_j)   // 작은 풍선일수록 큼
-   w_j = invMass_j / (invMass_i + invMass_j)
+   w_i = invMass_i / (invMass_i + invMass_j)
    p_i -= n × overlap × w_i ;  p_j += n × overlap × w_j
    ```
 
-4. **velocity exchange** (1D impulse along normal): 상대속도 `v_rel = v_i - v_j`, `vrn = v_rel · n`. `vrn ≤ 0` (이미 분리 중) → 속도 변경 skip (겹침 분리만 적용). 접근 중(`vrn > 0`)이면:
-   ```
-   jImp = -(1 + e) × vrn / (invMass_i + invMass_j)      // e = BALLOON_COLLISION_RESTITUTION
-   v_i += jImp × invMass_i × n
-   v_j -= jImp × invMass_j × n
-   ```
+4. **속력 보존 바운스 (D-P6-BBCOL-03 핵심)**: 접근 중일 때만 (`vrn = (v_i - v_j)·n > 0`). 아니면(이미 분리 중) 속도 미변경.
+   - (a) 충돌 전 속력 기록: `s_i = |v_i|`, `s_j = |v_j|`
+   - (b) 탄성 impulse(e=1, 질량비례)로 **새 방향** 산출:
+     ```
+     jImp = -2 × vrn / (invMass_i + invMass_j)        // (1+e), e=1
+     v_i' = v_i + jImp × invMass_i × n
+     v_j' = v_j - jImp × invMass_j × n
+     ```
+   - (c) **재정규화** — 각 풍선을 자기 원래 속력으로: `v_i = (v_i'/|v_i'|) × s_i`, `v_j = (v_j'/|v_j'|) × s_j` → **방향만 바뀌고 `|v|` 보존.**
+   - (d) 퇴화 가드: `|v_i'| < 1e-6` (탄성 결과 ≈0) → 원속도의 법선 반사 `v_i - 2(v_i·n)n` 사용 (크기 보존, 안정적 방향).
+   - 정지 풍선(`s=0`)은 재정규화 후에도 정지 — 속력 보존(0→0)의 직접 결과. 정지 풍선은 바운스로 움직이지 않고 위치 분리만 받는다.
 
-5. **sprite 동기화**: 위치가 바뀐 i, j 의 `sprite.x/y` 즉시 갱신 (motion 단계의 sync 이후 nudge 발생).
+5. **sprite 동기화**: 위치가 바뀐 i, j 의 `sprite.x/y` 즉시 갱신.
 
-**질량 정의**: `mass = radius²` (면적 비례, π 상수 생략 — 비율만 사용). `invMass = 1 / radius²`. XL(r=80) 질량 6400 vs XS(r≈9.6) 질량 ~92 → XL이 XS보다 ~70배 무거움 → XS가 강하게 튕겨나감.
+**질량 정의**: `mass = radius²` (면적 비례, π 생략). `invMass = 1 / radius²`. XL(r=80) 질량 6400 vs XS(r≈9.6) 질량 ~92 → XL이 XS보다 ~70배 무거움 → XL은 방향이 거의 안 꺾이고 XS가 크게 튕긴다 (위치 분리도 XS가 ~70배 더 밀림).
 
-**단일 패스**: frame당 1회 해소 (relaxation iteration 없음). 조밀한 더미에서 잔여 겹침이 남을 수 있으나 다음 frame 누적 보정 + restitution 0.9의 활발한 바운스로 정착 jitter 최소. iteration 추가는 perf 측정 후 polish 대상 (§7 tuning note).
+**거동 특성**: 빠른 작은 풍선이 큰 풍선에 부딪히면 작은 풍선이 속력 그대로 튕겨나가고 큰 풍선은 거의 직진. 동일 사이즈 정면충돌은 서로 방향을 반사(각자 속력 유지). 충돌은 에너지를 더하지도 빼지도 않으므로(각 `|v|` 불변) 가속 폭주·정착 소실 없이 안정적.
 
-**character·harpoon 무관**: 본 해소는 balloon 쌍에만 적용. character 충돌(game over, §3.7)·harpoon 충돌(split, §3.5)은 기존대로 별도 처리. 결정론 보존: RNG 미사용, 고정 iteration 순서(active 배열 인덱스) → AC.10 영향 없음.
+**단일 패스**: frame당 1회 해소. 조밀한 더미에서 잔여 겹침은 다음 frame 누적 보정으로 수렴. iteration 추가는 perf·jitter 측정 후 polish 대상.
+
+**character·harpoon 무관**: 본 해소는 balloon 쌍에만 적용. character 충돌(game over, §3.7)·harpoon 충돌(split, §3.5)은 별도 처리. 결정론 보존: RNG 미사용, 고정 iteration 순서 → AC.10 영향 없음.
 
 ---
 
@@ -279,7 +288,7 @@ child_right: vx = +SPLIT_VEL_X,  vy = -SPLIT_VEL_Y
 - 잔류 시간 (위로 튐): `t_apex = SPLIT_VEL_Y / GRAVITY = 250/400 = 0.625s` — 시각적으로 "한 번 튀어오름"이 명확 (P2 정합)
 - 좌우 분리: `0.625s × 120 = 75px` (= `SPAWN_IMMUNITY_RADIUS` 기본값) — Medium 반경 28px 대비 약 2.7배 ≈ 시각적으로 명확한 분리, immunity 해제 시점과 정확히 일치
 
-### 4.4 Balloon-Balloon 탄성 충돌 (§3.10)
+### 4.4 Balloon-Balloon 속력 보존 바운스 (§3.10)
 
 질량 (면적 비례, 상수 생략):
 ```
@@ -287,25 +296,28 @@ mass(b)    = radius(b)²            // radius = BALLOON_BASE_DIAMETER × SIZE_RA
 invMass(b) = 1 / radius(b)²
 ```
 
-겹침 분리 (inverse-mass 가중, n = 단위 법선 i→j):
+위치 분리 (inverse-mass 가중, n = 단위 법선 i→j):
 ```
 overlap = (ri + rj) - dist
-w_i = invMass_i / (invMass_i + invMass_j)
-p_i -= n × overlap × w_i ;  p_j += n × overlap × w_j
+p_i -= n × overlap × invMass_i/(invMass_i+invMass_j)
+p_j += n × overlap × invMass_j/(invMass_i+invMass_j)
 ```
 
-속도 교환 (vrn = (v_i - v_j)·n, 접근 중 vrn>0 에만):
+속력 보존 바운스 (접근 중 vrn = (v_i - v_j)·n > 0 에만):
 ```
-jImp = -(1 + e) × vrn / (invMass_i + invMass_j)      e = BALLOON_COLLISION_RESTITUTION = 0.9
-v_i += jImp × invMass_i × n ;  v_j -= jImp × invMass_j × n
+s_i = |v_i|, s_j = |v_j|                                  // 보존할 속력
+jImp = -2 × vrn / (invMass_i + invMass_j)                 // (1+e), e=1
+v_i' = v_i + jImp × invMass_i × n                         // 새 방향
+v_j' = v_j - jImp × invMass_j × n
+v_i = (v_i' / |v_i'|) × s_i ;  v_j = (v_j' / |v_j'|) × s_j // 방향만 바뀌고 |v| 보존
 ```
 
-예시 — XL(r=80, m=6400) 정지 ↔ XS(r=9.6, m≈92) 가 +200px/s로 정면 충돌 (n=(1,0)):
-- `invMass_XL = 1/6400 ≈ 1.563e-4`, `invMass_XS = 1/92 ≈ 1.087e-2`
-- `vrn = (0 - 200)·1 = -200` … 부호는 i/j 지정에 의존. i=XS(접근), j=XL 로 두면 `v_i-v_j = 200`, `vrn=200 (>0)`
-- `jImp = -(1.9)(200) / (1.087e-2 + 1.563e-4) ≈ -34480`
-- `v_XS += jImp × invMass_XS = -34480 × 1.087e-2 ≈ -375 px/s` → +200 에서 -375 로 강하게 튕겨나감
-- `v_XL -= jImp × invMass_XL = -(-34480 × 1.563e-4) ≈ +5.4 px/s` → 거의 안 밀림 (질량비 ~70배 확인)
+예시 — 작은 a(r=10, m=100, +200px/s 직진)가 큰 b(r=40, m=1600, 정지)에 정면충돌, n=(1,0):
+- `invA=0.01, invB=6.25e-4, 합=0.010625`, `vrn=200`
+- `jImp = -2×200/0.010625 ≈ -37647`
+- `v_a' = 200 + (-37647)(0.01) = -176.5` → 재정규화 `|v_a'|=176.5`, `s_a=200` → `v_a = -200` (속력 200 유지, 반전)
+- `v_b' = 0 - (-37647)(6.25e-4) = +23.5` → 재정규화하나 `s_b=0` → `v_b = 0` (정지 유지 — 속력 0 보존)
+- 결과: 작은 풍선은 200으로 튕겨 돌아가고, 큰 풍선은 정지 상태 유지. 두 속력 모두 충돌로 안 변함.
 
 ### 4.3 Spawn count over time
 
@@ -340,8 +352,8 @@ SPAWN_COUNT_AT(t):
 | E6 | 가로 모드 진입 | MVP 미지원. CSS `body { orientation: portrait }` 강제 + Pixi viewport portrait fixed. resize 발생 시 모든 풍선 `x` clamp |
 | **E7** | **분열 자식이 character와 근접 spawn** | **거리 기반 immunity** — 자식 spawn 시점부터 `dist(child, character) < SPAWN_IMMUNITY_RADIUS` (75px) 인 동안 character collision 면제. 자식의 위로 튐(SPLIT_VEL_Y=250) + 좌우 분리(SPLIT_VEL_X=120)로 약 200ms 안에 75px 거리 확보 → 자연 해제. **frame 기반 면제(이전 안)는 16.67ms = 4.2px 이동에 그쳐 보호 무효 → 거리 기반으로 교체** |
 | E8 | `pointercancel` 중 풍선 spawn → drag X 좌표 모름 | `dragMove` 마지막 좌표 유지. character는 이동 멈춤. balloon 시뮬 정상 진행 |
-| **E9** | **분열 형제가 부모 위치에서 거리 0으로 겹쳐 생성** | **`spawnImmunityRadius > 0` 인 풍선은 balloon-balloon 충돌 면제 (§3.10 step 1).** 거리 0에서 즉시 충돌 해소하면 overlap = sumR 전량이 한 frame에 분리되어 폭발적 속도 부여 → SPLIT_VEL 설계 무력화. immunity가 character 75px 이탈 시 해제(E7)되고 그때는 이미 SPLIT_VEL로 분리 완료 → 자연스러운 상호충돌 재개 |
-| E10 | balloon-balloon 충돌 시 두 풍선 완전 동일 좌표 (distSq=0, immunity 모두 해제된 비정상 케이스) | 법선 계산 불가 → 해당 쌍 skip (§3.10 step 2). 다음 frame 중력·미세 위치차로 자연 해소. 0-division 가드 |
+| **E9** | **분열 형제가 부모 위치에서 거리 0으로 겹쳐 생성** | **`spawnImmunityRadius > 0` 인 풍선은 balloon-balloon 분리 면제 (§3.10 step 1).** 거리 0~근접에서 즉시 분리하면 overlap = sumR 전량이 한 frame에 보정되어 시각적으로 순간이동(점프). immunity가 character 75px 이탈 시 해제(E7)되고 그때는 이미 SPLIT_VEL로 분리 완료 → 자연스러운 상호분리 재개 |
+| E10 | balloon-balloon 분리 시 두 풍선 완전 동일 좌표 (distSq=0, immunity 모두 해제된 비정상 케이스) | 법선 계산 불가 → 해당 쌍 skip (§3.10 step 2). 다음 frame 중력·미세 위치차로 자연 해소. 0-division 가드 |
 
 ---
 
@@ -390,7 +402,7 @@ SPAWN_COUNT_AT(t):
 | `SIZE_RATIO_SMALL` | 0.48 | 0.40–0.55 | art-bible §3.3 lock |
 | `GRAVITY` | 400 px/s² | 300–600 | ↑ = 빠른 카오스, ↓ = 여유 |
 | `BOUNCE_RESTITUTION` | 0.85 | 0.70–1.00 | 벽·바닥 반사 탄성. 1.0 = 무한 바운스. 작을수록 정착감 |
-| **`BALLOON_COLLISION_RESTITUTION`** | **0.9** | **0.5–1.0** | balloon-balloon 충돌 탄성 (§3.10). 1.0 = 에너지 보존(무한 핑퐁), 0.5 = 둔탁/정착. 0.9 = 탄탄한 짐볼 바운스 (치프 2026-06-24). ↓ 시 바닥 적체 ↑. 단일 해소 패스/frame (relaxation iteration은 perf 측정 후 polish 대상) |
+| balloon-balloon 분리 | (튜닝 상수 없음) | — | §3.10은 겹침 분리만 수행하며 속도를 바꾸지 않는다(D-P6-BBCOL-02). restitution·impulse 항이 없어 튜닝 knob 없음. 분리 가중은 `mass ∝ radius²`로 자동 결정. 단일 해소 패스/frame (relaxation iteration은 perf·jitter 측정 후 polish 대상) |
 | `SPLIT_VEL_X` | 120 px/s | 80–200 | 분열 좌우 분리 속도 |
 | `SPLIT_VEL_Y` | 250 px/s | 150–400 | 분열 위로 튐 속도 |
 | `HARPOON_GROWTH_SPEED` | **800 px/s** | 500–1500 | ↑ = 즉응감 (Pang 원작 ~1000), ↓ = 라인 자람 시각적 추적 가능. 800px 화면 기준 약 1.0s에 천장 도달. Pang 게임감 보존 — 너무 빠르면 작살 시각 추적 불가 + 풍선 위치 예측/회피 시간 사라짐 |
@@ -430,9 +442,9 @@ SPAWN_COUNT_AT(t):
 | AC.5 | 풍선 하단 도달 → `vy = -|vy| * 0.85`, `y` clamp at `FLOOR_Y = character.y` | unit test |
 | AC.6 | 풍선 ↔ character 원-원 충돌 (반경 합 = `balloon.radius + CHARACTER_HITBOX_RADIUS`) → `game:over` emit + GameLoop.end() | integration test |
 | **AC.26** | **balloon-balloon: 두 풍선이 `dist < ri+rj` 로 겹치면 한 frame 해소 후 `dist ≥ ri+rj` (겹침 제거). 분리 거리만큼 inverse-mass 가중 — 작은 풍선이 더 많이 밀림** | unit test (XL+XS 겹침 시나리오) |
-| **AC.27** | **balloon-balloon 속도 교환: 접근(vrn>0) 시 impulse 적용 — 충돌 후 두 풍선 상대속도 부호 반전(분리 방향), 질량비 ∝ r² (큰 풍선 Δv ≪ 작은 풍선 Δv). 분리 중(vrn≤0)이면 속도 변경 없음** | unit test (정면충돌 + 이미 분리중 2케이스) |
-| **AC.28** | **balloon-balloon 운동량 보존: 충돌 전후 `m_i·v_i + m_j·v_j` 보존 (±부동소수 오차). e=0.9 → 운동에너지는 감소(완전탄성 아님)** | unit test |
-| **AC.29** | **`spawnImmunityRadius > 0` 인 풍선은 balloon-balloon 충돌 면제 (E9) — 분열 직후 동일 위치 형제가 폭발 분리되지 않음. immunity 해제 후 정상 상호충돌** | unit test (immunity on/off boundary) |
+| **AC.27** | **balloon-balloon 속력 보존 바운스 (D-P6-BBCOL-03): 접근 충돌 후 각 풍선의 속도 *크기* `|v|` 는 충돌 전과 동일(±fp 오차), 방향은 바뀜. 정면 동일사이즈(방향 반전)·작은↔큰(작은 풍선 |v| 보존·반전, 정지 큰 풍선은 정지 유지)·임의 2D속도 모든 경우 `|v|` 보존. 이미 분리 중(vrn≤0)이면 속도 미변경** | unit test (동일사이즈 정면 + 소↔대 + 임의2D + 분리중 4케이스) |
+| **AC.28** | **balloon-balloon 분리 후 두 풍선 중심거리 ≥ `ri+rj` (겹침 제거). inverse-mass 가중 — 작은 풍선이 더 많이 밀리고(이동량 ∝ invMass) 이동량 합 = overlap** | unit test (질량비 ∝ r² 검증) |
+| **AC.29** | **`spawnImmunityRadius > 0` 인 풍선은 balloon-balloon 분리 면제 (E9) — 분열 직후 동일 위치 형제가 순간 분리되지 않음. immunity 해제 후 정상 분리** | unit test (immunity on/off) |
 | **AC.30** | **distSq=0 (완전 동일 위치, immunity 모두 해제) 비정상 케이스에서 0-division 없이 skip (E10), crash·NaN 없음** | unit test |
 | AC.7 | active harpoon 있을 때 `input:fire` 수신 → 무시 (active 1개 유지) | unit test |
 | **AC.17** | **작살 발사 후 캐릭터 좌우 이동 → 작살 `x` 변화 0px (발사 위치 고정)** | unit test |

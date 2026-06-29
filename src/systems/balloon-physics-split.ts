@@ -48,9 +48,9 @@ export const SMALL_HARPOON_HITBOX_EXTRA = 6;
 
 export const GRAVITY = 400; // px/s²
 export const BOUNCE_RESTITUTION = 0.85; // 벽·바닥 반사 탄성
-// D-P6-BBCOL-01 (사용자 2026-06-24): balloon-balloon 짐볼 탄성 충돌 (§3.10).
-// 질량비례(mass ∝ r²) + 탄탄한 바운스. 큰 버블이 작은 버블을 밀어내고 작은 버블이 강하게 튕김.
-export const BALLOON_COLLISION_RESTITUTION = 0.9;
+// D-P6-BBCOL-03 (사용자 2026-06-24): balloon-balloon 충돌 = 속력 보존 바운스 (§3.10).
+// 방향은 바뀌되 각 버블 속도 크기 |v| 는 충돌로 불변. 질량비례(mass ∝ r²)로 큰 버블은
+// 거의 직진, 작은 버블이 크게 튕김. 위치 분리도 inverse-mass 가중.
 export const SPLIT_VEL_X = 120; // px/s
 export const SPLIT_VEL_Y = 250; // px/s
 export const HARPOON_GROWTH_SPEED = 800; // px/s — Pang 원작 ~ (사용자 D-P6-SPD-01: 2400 → 800, ~0.8s에 천장 도달)
@@ -100,7 +100,8 @@ export function resetIdCounter(): void {
 }
 
 // ---------------------------------------------------------------------------
-// Pure physics: balloon-balloon elastic collision (D-P6-BBCOL-01, §3.10/§4.4)
+// Pure physics: balloon-balloon collision — speed-preserving bounce
+// (D-P6-BBCOL-03, §3.10/§4.4)
 // ---------------------------------------------------------------------------
 
 /** Minimal mutable body view — BalloonEntity satisfies this. */
@@ -111,13 +112,21 @@ export interface CollisionBody {
   vy: number;
 }
 
+const SPEED_EPSILON = 1e-6;
+
 /**
- * Resolve a single balloon-balloon elastic collision pair **in place**.
+ * Resolve a single balloon-balloon collision **in place** — bounce that
+ * preserves each body's speed magnitude.
  *
- * Impulse-based circle-circle, mass ∝ radius² (짐볼 질량비례). Performs
- * inverse-mass-weighted positional separation (lighter body moves more) and,
- * if the bodies are approaching (vrn > 0), a normal-impulse velocity exchange
- * with the given restitution. Bodies already separating get separation only.
+ * D-P6-BBCOL-03 (사용자 2026-06-24): 충돌하면 **방향 벡터는 바뀌되, 각 버블의 속도
+ * 크기 |v| 는 충돌로 변하지 않는다.** 절차:
+ *   1. inverse-mass 가중 위치 분리 (mass ∝ radius² → 작은 버블이 더 밀림).
+ *   2. 접근 중(vrn>0)이면 질량비례 탄성 impulse(e=1)로 **새 방향**을 구한 뒤, 각
+ *      버블 속도를 **충돌 전 속력**으로 재정규화 → 방향만 바뀌고 |v| 보존.
+ *      (정지 버블은 |v|=0 이므로 충돌 후에도 정지 — 속력 보존의 직접 결과.)
+ *      탄성 결과가 ≈0 인 퇴화 케이스는 원속도의 법선 반사(크기 보존)로 폴백.
+ *
+ * 질량비례 효과: 큰 버블은 방향이 거의 안 꺾이고(거의 직진), 작은 버블이 크게 튕긴다.
  *
  * @returns true if the bodies were overlapping (and thus mutated), false otherwise.
  *
@@ -129,7 +138,6 @@ export function resolveBalloonPair(
   ra: number,
   b: CollisionBody,
   rb: number,
-  restitution: number,
 ): boolean {
   const dx = b.x - a.x;
   const dy = b.y - a.y;
@@ -154,14 +162,41 @@ export function resolveBalloonPair(
   b.x += nx * overlap * (invB / invSum);
   b.y += ny * overlap * (invB / invSum);
 
-  // (2) velocity exchange — impulse only when approaching (vrn > 0)
-  const vrn = (a.vx - b.vx) * nx + (a.vy - b.vy) * ny;
+  // (2) speed-preserving bounce — only when approaching (vrn > 0)
+  const vrn = (a.vx - b.vx) * nx + (a.vy - b.vy) * ny; // relative normal velocity
   if (vrn > 0) {
-    const jImp = -(1 + restitution) * vrn / invSum;
-    a.vx += jImp * invA * nx;
-    a.vy += jImp * invA * ny;
-    b.vx -= jImp * invB * nx;
-    b.vy -= jImp * invB * ny;
+    const sa = Math.hypot(a.vx, a.vy); // pre-collision speeds (to preserve)
+    const sb = Math.hypot(b.vx, b.vy);
+
+    // elastic impulse (e=1) gives the NEW directions (mass ∝ r² weighted)
+    const jImp = -2 * vrn / invSum; // (1 + e), e = 1
+    const eavx = a.vx + jImp * invA * nx;
+    const eavy = a.vy + jImp * invA * ny;
+    const ebvx = b.vx - jImp * invB * nx;
+    const ebvy = b.vy - jImp * invB * ny;
+
+    // degenerate fallback: reflect original velocity about normal (magnitude-preserving)
+    const adn = a.vx * nx + a.vy * ny;
+    const bdn = b.vx * nx + b.vy * ny;
+
+    // renormalize each to its original speed → direction changes, |v| preserved
+    const ma = Math.hypot(eavx, eavy);
+    if (ma > SPEED_EPSILON) {
+      a.vx = (eavx / ma) * sa;
+      a.vy = (eavy / ma) * sa;
+    } else {
+      a.vx = a.vx - 2 * adn * nx;
+      a.vy = a.vy - 2 * adn * ny;
+    }
+
+    const mb = Math.hypot(ebvx, ebvy);
+    if (mb > SPEED_EPSILON) {
+      b.vx = (ebvx / mb) * sb;
+      b.vy = (ebvy / mb) * sb;
+    } else {
+      b.vx = b.vx - 2 * bdn * nx;
+      b.vy = b.vy - 2 * bdn * ny;
+    }
   }
 
   return true;
@@ -171,8 +206,8 @@ export function resolveBalloonPair(
  * Resolve all balloon-balloon collisions for one frame (O(n²/2) pairs).
  *
  * Skips any balloon with `spawnImmunityRadius > 0` (E9 — split siblings spawn
- * overlapped at the parent position; immunity prevents an explosive separation
- * until they drift apart). Per-pair math delegates to {@link resolveBalloonPair};
+ * overlapped at the parent position; immunity defers resolution until they drift
+ * apart via SPLIT_VEL). Per-pair math delegates to {@link resolveBalloonPair};
  * `onPairResolved` fires for each overlapping pair (used for sprite sync).
  *
  * Single pass — no relaxation iteration (§3.10). Deterministic: fixed array
@@ -183,7 +218,6 @@ export function resolveBalloonCollisions<
 >(
   balloons: readonly T[],
   radiusOf: (b: T) => number,
-  restitution: number,
   onPairResolved?: (a: T, b: T) => void,
 ): void {
   const n = balloons.length;
@@ -195,7 +229,7 @@ export function resolveBalloonCollisions<
       const b = balloons[j];
       if (b.spawnImmunityRadius > 0) continue; // E9
       const rb = radiusOf(b);
-      if (resolveBalloonPair(a, ra, b, rb, restitution)) {
+      if (resolveBalloonPair(a, ra, b, rb)) {
         onPairResolved?.(a, b);
       }
     }
@@ -346,19 +380,18 @@ export class BalloonPhysicsSplitSystem {
     this._updateHarpoon(dt);
     if (!this._character.isDying) {
       this._checkCollisions();
-      this._resolveBalloonCollisions(); // D-P6-BBCOL-01: 짐볼 탄성 충돌 (§3.10)
+      this._resolveBalloonCollisions(); // D-P6-BBCOL-03: 속력 보존 바운스 (§3.10)
       this._updateSpawnTimer(dt);
     }
   }
 
-  // D-P6-BBCOL-01: balloon-balloon 짐볼 탄성 충돌 (§3.10).
+  // D-P6-BBCOL-03: balloon-balloon 속력 보존 바운스 (§3.10).
   // 순회 + 충돌 수학은 순수 함수 resolveBalloonCollisions()에 위임 (단위 테스트 가능).
   // 본 메서드는 radius 접근 + 충돌 쌍 sprite 동기화 콜백만 제공.
   private _resolveBalloonCollisions(): void {
     resolveBalloonCollisions(
       this._activeBalloons,
       (b) => this._balloonRadius(b),
-      BALLOON_COLLISION_RESTITUTION,
       (a, b) => {
         // sprite 동기화 — motion 단계 sync 이후 nudge 발생
         a.sprite.x = a.x;
